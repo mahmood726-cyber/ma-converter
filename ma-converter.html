@@ -1,0 +1,1686 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MA Converter — Universal Effect Size Translator</title>
+<style>
+:root {
+  --bg: #f8f9fa;
+  --surface: #ffffff;
+  --surface2: #f1f3f5;
+  --border: #dee2e6;
+  --text: #212529;
+  --text2: #6c757d;
+  --primary: #2b6cb0;
+  --primary-light: #ebf4ff;
+  --accent: #2c7a7b;
+  --success: #276749;
+  --success-bg: #f0fff4;
+  --success-border: #9ae6b4;
+  --warn: #744210;
+  --warn-bg: #fffbeb;
+  --warn-border: #f6e05e;
+  --muted: #718096;
+  --muted-bg: #f7fafc;
+  --muted-border: #cbd5e0;
+  --danger: #9b2c2c;
+  --danger-bg: #fff5f5;
+  --shadow: 0 1px 3px rgba(0,0,0,0.1), 0 1px 2px rgba(0,0,0,0.06);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.07), 0 2px 4px rgba(0,0,0,0.05);
+  --radius: 8px;
+  --radius-sm: 4px;
+}
+[data-theme="dark"] {
+  --bg: #1a202c;
+  --surface: #2d3748;
+  --surface2: #4a5568;
+  --border: #4a5568;
+  --text: #f7fafc;
+  --text2: #a0aec0;
+  --primary: #63b3ed;
+  --primary-light: #2a4365;
+  --accent: #81e6d9;
+  --success: #9ae6b4;
+  --success-bg: #1c4532;
+  --success-border: #276749;
+  --warn: #f6e05e;
+  --warn-bg: #744210;
+  --warn-border: #d69e2e;
+  --muted: #a0aec0;
+  --muted-bg: #2d3748;
+  --muted-border: #4a5568;
+  --danger: #feb2b2;
+  --danger-bg: #742a2a;
+  --shadow: 0 1px 3px rgba(0,0,0,0.3);
+  --shadow-md: 0 4px 6px rgba(0,0,0,0.25);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  font-size: 14px;
+  line-height: 1.5;
+  min-height: 100vh;
+}
+.app-header {
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  padding: 12px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+.app-title { font-size: 18px; font-weight: 700; color: var(--primary); }
+.app-subtitle { font-size: 12px; color: var(--text2); margin-top: 1px; }
+.header-controls { display: flex; gap: 8px; align-items: center; }
+.btn-icon {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 6px 10px;
+  cursor: pointer;
+  color: var(--text);
+  font-size: 13px;
+  transition: background 0.15s;
+}
+.btn-icon:hover { background: var(--border); }
+.tabs-bar {
+  background: var(--surface);
+  border-bottom: 2px solid var(--border);
+  display: flex;
+  gap: 0;
+  padding: 0 20px;
+}
+.tab-btn {
+  padding: 10px 18px;
+  border: none;
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  background: transparent;
+  color: var(--text2);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s;
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--primary); }
+.tab-btn.active { color: var(--primary); border-bottom-color: var(--primary); }
+.tab-panel { display: none; padding: 20px; max-width: 1100px; margin: 0 auto; }
+.tab-panel.active { display: block; }
+/* Forms */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 16px;
+  margin-bottom: 16px;
+  box-shadow: var(--shadow);
+}
+.card-title {
+  font-size: 14px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: var(--text);
+}
+.form-row { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.form-group { display: flex; flex-direction: column; gap: 4px; flex: 1; min-width: 140px; }
+.form-group label { font-size: 12px; font-weight: 500; color: var(--text2); }
+.form-group input, .form-group select, .form-group textarea {
+  padding: 7px 10px;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  background: var(--surface2);
+  color: var(--text);
+  font-size: 13px;
+  transition: border-color 0.15s;
+}
+.form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+  outline: none;
+  border-color: var(--primary);
+  box-shadow: 0 0 0 2px var(--primary-light);
+}
+.conditional-inputs { display: none; }
+.conditional-inputs.visible { display: flex; gap: 12px; flex-wrap: wrap; margin-bottom: 10px; }
+.btn {
+  padding: 8px 18px;
+  border: none;
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 500;
+  transition: all 0.15s;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.btn-primary { background: var(--primary); color: white; }
+.btn-primary:hover { opacity: 0.9; }
+.btn-secondary {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.btn-secondary:hover { background: var(--border); }
+.btn-sm { padding: 4px 10px; font-size: 12px; }
+.btn-row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 6px; }
+/* Results grid */
+.results-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+.result-card {
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  border: 1px solid;
+  position: relative;
+}
+.result-card.exact { background: var(--success-bg); border-color: var(--success-border); }
+.result-card.approx { background: var(--warn-bg); border-color: var(--warn-border); }
+.result-card.impossible { background: var(--muted-bg); border-color: var(--muted-border); opacity: 0.7; }
+.result-card.source { background: var(--primary-light); border-color: var(--primary); }
+.result-label {
+  font-size: 11px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 2px;
+}
+.result-card.exact .result-label { color: var(--success); }
+.result-card.approx .result-label { color: var(--warn); }
+.result-card.impossible .result-label { color: var(--muted); }
+.result-card.source .result-label { color: var(--primary); }
+.result-value { font-size: 16px; font-weight: 700; margin-bottom: 2px; }
+.result-ci { font-size: 12px; color: var(--text2); margin-bottom: 4px; }
+.result-formula { font-size: 11px; color: var(--text2); font-style: italic; }
+.result-badge {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.result-card.exact .result-badge { background: var(--success-border); color: var(--success); }
+.result-card.approx .result-badge { background: var(--warn-border); color: var(--warn); }
+.result-card.impossible .result-badge { background: var(--muted-border); color: var(--muted); }
+.result-card.source .result-badge { background: var(--primary); color: white; }
+.copy-btn-small {
+  font-size: 10px;
+  padding: 2px 6px;
+  background: rgba(255,255,255,0.5);
+  border: 1px solid currentColor;
+  border-radius: 3px;
+  cursor: pointer;
+  opacity: 0.7;
+  margin-top: 4px;
+  display: inline-block;
+}
+.copy-btn-small:hover { opacity: 1; }
+/* Legend */
+.legend {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-bottom: 12px;
+  font-size: 11px;
+}
+.legend-item { display: flex; align-items: center; gap: 5px; }
+.legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+.legend-dot.exact { background: var(--success-border); }
+.legend-dot.approx { background: var(--warn-border); }
+.legend-dot.impossible { background: var(--muted-border); }
+.legend-dot.source { background: var(--primary); }
+/* Batch tab */
+.batch-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 700px) { .batch-layout { grid-template-columns: 1fr; } }
+.csv-textarea { width: 100%; min-height: 180px; font-family: monospace; font-size: 12px; resize: vertical; }
+.result-table-wrap { overflow-x: auto; }
+table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+th {
+  background: var(--surface2);
+  padding: 8px 10px;
+  text-align: left;
+  font-weight: 600;
+  border-bottom: 2px solid var(--border);
+  white-space: nowrap;
+}
+td {
+  padding: 7px 10px;
+  border-bottom: 1px solid var(--border);
+}
+tr:last-child td { border-bottom: none; }
+tr:hover td { background: var(--surface2); }
+td.converted { color: var(--success); font-weight: 600; }
+td.impossible { color: var(--muted); font-style: italic; }
+/* Formulas tab */
+.formula-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+  gap: 12px;
+}
+.formula-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: var(--shadow);
+}
+.formula-header {
+  padding: 10px 14px;
+  background: var(--primary-light);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  cursor: pointer;
+}
+.formula-title { font-size: 13px; font-weight: 600; color: var(--primary); }
+.formula-body { padding: 12px 14px; display: none; }
+.formula-card.open .formula-body { display: block; }
+.formula-math {
+  font-family: "Courier New", monospace;
+  font-size: 12px;
+  background: var(--surface2);
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  margin: 6px 0;
+  overflow-x: auto;
+  white-space: pre-wrap;
+  color: var(--text);
+  border: 1px solid var(--border);
+}
+.formula-note { font-size: 12px; color: var(--text2); margin-top: 6px; }
+.formula-ref { font-size: 11px; color: var(--primary); margin-top: 4px; }
+.toggle-arrow { font-size: 10px; color: var(--text2); transition: transform 0.2s; }
+.formula-card.open .toggle-arrow { transform: rotate(180deg); }
+/* Examples */
+.examples-row { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 14px; }
+.example-btn {
+  padding: 6px 12px;
+  background: var(--primary-light);
+  border: 1px solid var(--primary);
+  border-radius: var(--radius-sm);
+  color: var(--primary);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 500;
+  transition: all 0.15s;
+}
+.example-btn:hover { background: var(--primary); color: white; }
+/* Alert */
+.alert {
+  padding: 10px 14px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 12px;
+  font-size: 13px;
+  border: 1px solid;
+}
+.alert-info { background: var(--primary-light); border-color: var(--primary); color: var(--primary); }
+.alert-warn { background: var(--warn-bg); border-color: var(--warn-border); color: var(--warn); }
+.alert-danger { background: var(--danger-bg); border-color: var(--danger); color: var(--danger); }
+/* Export tab */
+.export-section { margin-bottom: 20px; }
+.export-preview {
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  font-family: monospace;
+  font-size: 12px;
+  white-space: pre-wrap;
+  max-height: 300px;
+  overflow-y: auto;
+  margin-top: 10px;
+}
+/* Utility */
+.hidden { display: none !important; }
+.text-muted { color: var(--text2); }
+.text-sm { font-size: 12px; }
+.mt-1 { margin-top: 4px; }
+.mt-2 { margin-top: 8px; }
+.gap-section { margin-top: 20px; }
+.divider { border: none; border-top: 1px solid var(--border); margin: 14px 0; }
+@media (max-width: 500px) {
+  .app-subtitle { display: none; }
+  .tab-btn { padding: 10px 10px; font-size: 12px; }
+  .tab-panel { padding: 12px; }
+}
+</style>
+</head>
+<body data-theme="light">
+
+<header class="app-header">
+  <div>
+    <div class="app-title">MA Converter</div>
+    <div class="app-subtitle">Universal Effect Size Translator for Meta-Analysis</div>
+  </div>
+  <div class="header-controls">
+    <button class="btn-icon" id="themeToggleBtn" title="Toggle dark/light mode" onclick="toggleTheme()">🌙</button>
+  </div>
+</header>
+
+<nav class="tabs-bar">
+  <button class="tab-btn active" data-tab="single" onclick="switchTab('single')">Single Conversion</button>
+  <button class="tab-btn" data-tab="batch" onclick="switchTab('batch')">Batch Conversion</button>
+  <button class="tab-btn" data-tab="formulas" onclick="switchTab('formulas')">Formulas Reference</button>
+  <button class="tab-btn" data-tab="export" onclick="switchTab('export')">Export</button>
+</nav>
+
+<!-- TAB 1: SINGLE CONVERSION -->
+<div class="tab-panel active" id="tab-single">
+  <div class="card">
+    <div class="card-title">Built-in Examples</div>
+    <div class="examples-row">
+      <button class="example-btn" onclick="loadExample('statin')">Statin OR for MI</button>
+      <button class="example-btn" onclick="loadExample('exercise')">Exercise SMD for Depression</button>
+      <button class="example-btn" onclick="loadExample('doac')">DOAC HR for Stroke</button>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Input</div>
+    <div class="form-row">
+      <div class="form-group" style="max-width:220px">
+        <label for="sourceMeasure">Source Measure</label>
+        <select id="sourceMeasure" onchange="onSourceMeasureChange()">
+          <option value="OR">OR — Odds Ratio</option>
+          <option value="RR">RR — Risk Ratio</option>
+          <option value="RD">RD — Risk Difference</option>
+          <option value="NNT">NNT — Number Needed to Treat</option>
+          <option value="HR">HR — Hazard Ratio</option>
+          <option value="SMD">SMD — Standardised Mean Diff (Cohen's d)</option>
+          <option value="MD">MD — Mean Difference</option>
+          <option value="logOR">logOR — Log Odds Ratio</option>
+          <option value="logRR">logRR — Log Risk Ratio</option>
+          <option value="r">r — Correlation Coefficient</option>
+          <option value="fisherz">Fisher's z — Transformed r</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label for="inputEstimate">Estimate</label>
+        <input type="number" id="inputEstimate" step="any" placeholder="e.g. 0.71">
+      </div>
+      <div class="form-group">
+        <label for="inputLower">95% CI Lower</label>
+        <input type="number" id="inputLower" step="any" placeholder="e.g. 0.63">
+      </div>
+      <div class="form-group">
+        <label for="inputUpper">95% CI Upper</label>
+        <input type="number" id="inputUpper" step="any" placeholder="e.g. 0.80">
+      </div>
+    </div>
+
+    <!-- Conditional: OR/RR/RD/NNT need control rate -->
+    <div class="conditional-inputs" id="condControlRate">
+      <div class="form-group" style="max-width:200px">
+        <label for="controlRate">Control Event Rate (p_c)</label>
+        <input type="number" id="controlRate" step="any" min="0" max="1" placeholder="e.g. 0.10">
+      </div>
+      <div class="text-muted text-sm mt-2" style="align-self:flex-end;padding-bottom:8px">
+        Required for OR↔RR↔RD↔NNT conversions
+      </div>
+    </div>
+
+    <!-- Conditional: MD↔SMD needs SD -->
+    <div class="conditional-inputs" id="condSD">
+      <div class="form-group" style="max-width:200px">
+        <label for="pooledSD">Pooled SD</label>
+        <input type="number" id="pooledSD" step="any" min="0" placeholder="e.g. 8.5">
+      </div>
+      <div class="text-muted text-sm mt-2" style="align-self:flex-end;padding-bottom:8px">
+        Required for MD↔SMD conversion
+      </div>
+    </div>
+
+    <!-- Conditional: HR needs baseline risk and time -->
+    <div class="conditional-inputs" id="condHR">
+      <div class="form-group" style="max-width:180px">
+        <label for="baselineRisk">Baseline Risk (p_0)</label>
+        <input type="number" id="baselineRisk" step="any" min="0" max="1" placeholder="e.g. 0.05">
+      </div>
+      <div class="form-group" style="max-width:140px">
+        <label for="timeHorizon">Time Horizon (years)</label>
+        <input type="number" id="timeHorizon" step="any" min="0" placeholder="e.g. 1">
+      </div>
+      <div class="text-muted text-sm mt-2" style="align-self:flex-end;padding-bottom:8px">
+        For HR→absolute risk conversions
+      </div>
+    </div>
+
+    <div class="btn-row">
+      <button class="btn btn-primary" onclick="runSingleConversion()">Convert</button>
+      <button class="btn btn-secondary" onclick="clearSingle()">Clear</button>
+    </div>
+  </div>
+
+  <div id="singleError" class="hidden"></div>
+
+  <div id="singleResults" class="hidden">
+    <div class="card">
+      <div class="card-title">Results</div>
+      <div class="legend">
+        <span class="legend-item"><span class="legend-dot source"></span> Source (input)</span>
+        <span class="legend-item"><span class="legend-dot exact"></span> Exact conversion</span>
+        <span class="legend-item"><span class="legend-dot approx"></span> Approximate (formula-based)</span>
+        <span class="legend-item"><span class="legend-dot impossible"></span> Needs more info</span>
+      </div>
+      <div class="results-grid" id="resultsGrid"></div>
+      <div class="btn-row mt-2">
+        <button class="btn btn-secondary btn-sm" onclick="copyAllResults()">Copy All Results</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 2: BATCH CONVERSION -->
+<div class="tab-panel" id="tab-batch">
+  <div class="card">
+    <div class="card-title">Batch Conversion</div>
+    <div class="alert alert-info">
+      Paste CSV with columns: <strong>study, measure, estimate, ci_lower, ci_upper</strong>
+      — optionally add <strong>control_rate</strong> and <strong>sd</strong> columns.
+      First row = header.
+    </div>
+    <div class="batch-layout">
+      <div>
+        <div class="form-group">
+          <label>Paste CSV Data</label>
+          <textarea class="csv-textarea" id="batchCSV" placeholder="study,measure,estimate,ci_lower,ci_upper,control_rate
+Study A,OR,0.71,0.63,0.80,0.10
+Study B,OR,0.85,0.74,0.98,0.12
+Study C,SMD,-0.62,-0.81,-0.42,
+Study D,RR,0.78,0.68,0.89,0.15"></textarea>
+        </div>
+        <div class="form-row mt-2">
+          <div class="form-group" style="max-width:220px">
+            <label for="batchTarget">Convert TO</label>
+            <select id="batchTarget">
+              <option value="OR">OR — Odds Ratio</option>
+              <option value="RR">RR — Risk Ratio</option>
+              <option value="RD">RD — Risk Difference</option>
+              <option value="NNT">NNT — Number Needed to Treat</option>
+              <option value="SMD">SMD — Standardised Mean Diff</option>
+              <option value="logOR">logOR — Log Odds Ratio</option>
+              <option value="logRR">logRR — Log Risk Ratio</option>
+            </select>
+          </div>
+        </div>
+        <div class="btn-row mt-2">
+          <button class="btn btn-primary" onclick="runBatchConversion()">Run Batch</button>
+          <button class="btn btn-secondary" onclick="loadBatchExample()">Load Example</button>
+        </div>
+      </div>
+      <div>
+        <div class="card-title text-muted">Column Guide</div>
+        <table>
+          <thead><tr><th>Column</th><th>Required</th><th>Notes</th></tr></thead>
+          <tbody>
+            <tr><td><code>study</code></td><td>Yes</td><td>Study label</td></tr>
+            <tr><td><code>measure</code></td><td>Yes</td><td>OR, RR, RD, HR, SMD, MD, logOR, logRR, NNT, r, fisherz</td></tr>
+            <tr><td><code>estimate</code></td><td>Yes</td><td>Point estimate</td></tr>
+            <tr><td><code>ci_lower</code></td><td>Yes</td><td>Lower 95% CI</td></tr>
+            <tr><td><code>ci_upper</code></td><td>Yes</td><td>Upper 95% CI</td></tr>
+            <tr><td><code>control_rate</code></td><td>Cond.</td><td>Needed for OR/RR/RD/NNT conversions</td></tr>
+            <tr><td><code>sd</code></td><td>Cond.</td><td>Needed for MD↔SMD</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <div id="batchError" class="hidden"></div>
+  <div id="batchResultsSection" class="hidden">
+    <div class="card">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px">
+        <div class="card-title" style="margin:0">Batch Results</div>
+        <div class="btn-row" style="margin:0">
+          <button class="btn btn-secondary btn-sm" onclick="downloadBatchCSV()">Download CSV</button>
+          <button class="btn btn-secondary btn-sm" onclick="copyBatchResults()">Copy</button>
+        </div>
+      </div>
+      <div class="result-table-wrap">
+        <table id="batchResultTable">
+          <thead id="batchResultHead"></thead>
+          <tbody id="batchResultBody"></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- TAB 3: FORMULAS REFERENCE -->
+<div class="tab-panel" id="tab-formulas">
+  <div class="alert alert-info" style="margin-bottom:14px">
+    Click any card to expand derivation and references. CI propagation uses the delta method throughout.
+  </div>
+  <div class="formula-grid" id="formulaGrid"></div>
+</div>
+
+<!-- TAB 4: EXPORT -->
+<div class="tab-panel" id="tab-export">
+  <div class="card">
+    <div class="card-title">Export Current Results</div>
+    <div id="exportEmpty" class="text-muted">Run a conversion first (Tab 1 or Tab 2) to enable export.</div>
+    <div id="exportActions" class="hidden">
+      <div class="export-section">
+        <div class="btn-row">
+          <button class="btn btn-primary" onclick="copyExportText()">Copy as Text</button>
+          <button class="btn btn-secondary" onclick="downloadExportCSV()">Download CSV</button>
+          <button class="btn btn-secondary" onclick="downloadHTMLReport()">Download HTML Report</button>
+          <button class="btn btn-secondary" onclick="window.print()">Print</button>
+        </div>
+        <div class="export-preview" id="exportPreview"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// THEME
+// ============================================================
+(function() {
+  const saved = localStorage.getItem('maconv_theme') || 'light';
+  document.body.setAttribute('data-theme', saved);
+  const btn = document.getElementById('themeToggleBtn');
+  if (btn) btn.textContent = saved === 'dark' ? '☀️' : '🌙';
+})();
+
+function toggleTheme() {
+  const body = document.body;
+  const current = body.getAttribute('data-theme');
+  const next = current === 'dark' ? 'light' : 'dark';
+  body.setAttribute('data-theme', next);
+  document.getElementById('themeToggleBtn').textContent = next === 'dark' ? '☀️' : '🌙';
+  localStorage.setItem('maconv_theme', next);
+}
+
+// ============================================================
+// TABS
+// ============================================================
+function switchTab(name) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.toggle('active', b.dataset.tab === name));
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.toggle('active', p.id === 'tab-' + name));
+  if (name === 'export') refreshExportPreview();
+}
+
+// ============================================================
+// CONVERSION ENGINE
+// ============================================================
+
+const MEASURES = ['OR', 'RR', 'RD', 'NNT', 'HR', 'SMD', 'MD', 'logOR', 'logRR', 'r', 'fisherz'];
+
+const MEASURE_LABELS = {
+  OR: 'OR',
+  RR: 'RR',
+  RD: 'RD',
+  NNT: 'NNT',
+  HR: 'HR',
+  SMD: 'SMD / Cohen\'s d',
+  MD: 'MD',
+  logOR: 'log OR',
+  logRR: 'log RR',
+  r: 'Correlation r',
+  fisherz: "Fisher's z"
+};
+
+const MEASURE_UNITS = {
+  OR: '',  RR: '',  RD: '',  NNT: ' events',
+  HR: '',  SMD: '',  MD: '',  logOR: '',  logRR: '',  r: '',  fisherz: ''
+};
+
+// SE from CI (log scale for ratio measures, natural scale for others)
+function seFromCI(lower, upper, logScale) {
+  if (logScale) {
+    return (Math.log(upper) - Math.log(lower)) / 3.919928;
+  }
+  return (upper - lower) / 3.919928;
+}
+
+// Clamp probability
+function clamp01(x) { return Math.max(1e-8, Math.min(1 - 1e-8, x)); }
+
+// Core conversion function
+// Returns: { estimate, lower, upper, quality, formula, note } or { impossible: true, reason }
+function convertMeasure(srcMeasure, srcEst, srcLower, srcUpper, opts) {
+  opts = opts || {};
+  const pc = (opts.controlRate !== undefined && opts.controlRate !== null && opts.controlRate !== '') ? parseFloat(opts.controlRate) : null;
+  const sd = (opts.pooledSD !== undefined && opts.pooledSD !== null && opts.pooledSD !== '') ? parseFloat(opts.pooledSD) : null;
+  const p0 = (opts.baselineRisk !== undefined && opts.baselineRisk !== null && opts.baselineRisk !== '') ? parseFloat(opts.baselineRisk) : null;
+  const tH = (opts.timeHorizon !== undefined && opts.timeHorizon !== null && opts.timeHorizon !== '') ? parseFloat(opts.timeHorizon) : null;
+
+  const results = {};
+
+  // --- Normalize input to canonical intermediates ---
+  // We work with: logOR, logRR, RD, NNT, logHR, SMD, MD, fisher_z
+
+  // Compute SE on appropriate scale
+  let logOR_est = null, seLogOR = null;
+  let logRR_est = null, seLogRR = null;
+  let RD_est = null, seRD = null;
+  let logHR_est = null, seLogHR = null;
+  let SMD_est = null, seSMD = null;
+  let MD_est = null, seMD = null;
+  let r_est = null;
+  let fz_est = null, seFZ = null;
+
+  switch (srcMeasure) {
+    case 'OR':
+      logOR_est = Math.log(srcEst);
+      seLogOR = seFromCI(srcLower, srcUpper, true);
+      break;
+    case 'logOR':
+      logOR_est = srcEst;
+      seLogOR = seFromCI(srcLower, srcUpper, false);
+      break;
+    case 'RR':
+      logRR_est = Math.log(srcEst);
+      seLogRR = seFromCI(srcLower, srcUpper, true);
+      break;
+    case 'logRR':
+      logRR_est = srcEst;
+      seLogRR = seFromCI(srcLower, srcUpper, false);
+      break;
+    case 'RD':
+      RD_est = srcEst;
+      seRD = seFromCI(srcLower, srcUpper, false);
+      break;
+    case 'NNT': {
+      const rdFromNNT = srcEst !== 0 ? 1 / srcEst : null;
+      if (rdFromNNT !== null) {
+        RD_est = rdFromNNT;
+        // CI inverts: 1/upper to 1/lower (but only if same sign)
+        const rdL = srcUpper !== 0 ? 1 / srcUpper : null;
+        const rdU = srcLower !== 0 ? 1 / srcLower : null;
+        if (rdL !== null && rdU !== null) {
+          seRD = seFromCI(rdL, rdU, false);
+        }
+      }
+      break;
+    }
+    case 'HR':
+      logHR_est = Math.log(srcEst);
+      seLogHR = seFromCI(srcLower, srcUpper, true);
+      break;
+    case 'SMD':
+      SMD_est = srcEst;
+      seSMD = seFromCI(srcLower, srcUpper, false);
+      break;
+    case 'MD':
+      MD_est = srcEst;
+      seMD = seFromCI(srcLower, srcUpper, false);
+      break;
+    case 'r':
+      r_est = srcEst;
+      fz_est = 0.5 * Math.log((1 + srcEst) / (1 - srcEst));
+      seFZ = seFromCI(
+        0.5 * Math.log((1 + srcLower) / (1 - srcLower)),
+        0.5 * Math.log((1 + srcUpper) / (1 - srcUpper)),
+        false
+      );
+      break;
+    case 'fisherz':
+      fz_est = srcEst;
+      seFZ = seFromCI(srcLower, srcUpper, false);
+      r_est = (Math.exp(2 * srcEst) - 1) / (Math.exp(2 * srcEst) + 1);
+      break;
+  }
+
+  // Derive cross-conversions where possible
+  // logOR ↔ logRR (needs pc)
+  if (logOR_est !== null && logRR_est === null && pc !== null) {
+    const OR = Math.exp(logOR_est);
+    const RR_val = OR / (1 - pc + pc * OR);
+    logRR_est = Math.log(RR_val);
+    // delta method: dRR/dOR = (1-pc)/(1-pc+pc*OR)^2; via log: d(logRR)/d(logOR) = (1-pc)/(1-pc+pc*OR)
+    const denom = 1 - pc + pc * OR;
+    const dLogRR_dLogOR = (1 - pc) * OR / (denom * denom) * (1 / RR_val);
+    seLogRR = seLogOR * Math.abs(dLogRR_dLogOR);
+  }
+  if (logRR_est !== null && logOR_est === null && pc !== null) {
+    const RR = Math.exp(logRR_est);
+    const pt = clamp01(pc * RR);
+    const OR_val = (pt / (1 - pt)) / (pc / (1 - pc));
+    logOR_est = Math.log(OR_val);
+    // delta method
+    const dLogOR_dLogRR = 1 / (1 - pt) * pt + 1; // d(logOR)/d(logRR) approx
+    // exact: logOR = log(p_t) - log(1-p_t) - log(pc) + log(1-pc)
+    // p_t = pc*RR, d(p_t)/d(logRR) = pc*RR = p_t
+    // d(logOR)/d(logRR) = dp_t/(p_t*(1-p_t)) * p_t = 1/(1-p_t)
+    seLogOR = seLogRR * (1 / (1 - pt));
+  }
+
+  // logRR → RD (needs pc)
+  if (logRR_est !== null && RD_est === null && pc !== null) {
+    const RR = Math.exp(logRR_est);
+    RD_est = pc * (RR - 1);
+    // SE_RD via delta method: d(RD)/d(logRR) = pc * RR
+    seRD = seLogRR * pc * Math.exp(logRR_est);
+  }
+  if (RD_est !== null && logRR_est === null && pc !== null) {
+    const pt = clamp01(pc + RD_est);
+    const RR_calc = pt / pc;
+    if (RR_calc > 0) {
+      logRR_est = Math.log(RR_calc);
+      // SE: d(logRR)/d(RD) = 1/pt = 1/(pc+RD)
+      seLogRR = seRD !== null ? seRD * (1 / Math.abs(pt)) : null;
+    }
+  }
+
+  // logOR → logRR already handled above; ensure logOR also derived from RD path
+  if (RD_est !== null && logOR_est === null && pc !== null) {
+    const pt = clamp01(pc + RD_est);
+    if (pc > 0 && pc < 1 && pt > 0 && pt < 1) {
+      logOR_est = Math.log((pt / (1 - pt)) / (pc / (1 - pc)));
+      const dLogOR_dRD = 1 / (pt * (1 - pt));
+      seLogOR = seRD !== null ? seRD * Math.abs(dLogOR_dRD) : null;
+    }
+  }
+
+  // RD → NNT
+  if (RD_est !== null) {
+    const nnt = RD_est !== 0 ? 1 / Math.abs(RD_est) : null;
+    // NNT CI: if RD_est is negative (treatment reduces events), NNT is positive benefit
+    // CI for NNT = 1/|RD_lower| to 1/|RD_upper|
+    let nntL = null, nntU = null;
+    if (seRD !== null) {
+      const rdLow = RD_est - 1.959964 * seRD;
+      const rdHigh = RD_est + 1.959964 * seRD;
+      if (rdLow !== 0 && rdHigh !== 0 && Math.sign(rdLow) === Math.sign(rdHigh)) {
+        nntL = Math.min(1 / Math.abs(rdLow), 1 / Math.abs(rdHigh));
+        nntU = Math.max(1 / Math.abs(rdLow), 1 / Math.abs(rdHigh));
+      }
+    }
+    results['NNT'] = nnt !== null ? {
+      estimate: nnt,
+      lower: nntL,
+      upper: nntU,
+      quality: pc !== null ? 'exact' : (srcMeasure === 'RD' ? 'exact' : 'exact'),
+      formula: 'NNT = 1 / |RD|',
+      note: RD_est < 0 ? 'Benefit (NNT to treat)' : 'Harm (NNH)'
+    } : { impossible: true, reason: 'RD = 0' };
+  }
+
+  // SMD ↔ logOR (Hasselblad-Hedges)
+  if (SMD_est !== null && logOR_est === null) {
+    logOR_est = SMD_est * Math.PI / Math.sqrt(3);
+    seLogOR = seSMD !== null ? seSMD * Math.PI / Math.sqrt(3) : null;
+  }
+  if (logOR_est !== null && SMD_est === null) {
+    SMD_est = logOR_est * Math.sqrt(3) / Math.PI;
+    seSMD = seLogOR !== null ? seLogOR * Math.sqrt(3) / Math.PI : null;
+  }
+
+  // MD ↔ SMD (needs SD)
+  if (MD_est !== null && SMD_est === null && sd !== null) {
+    SMD_est = MD_est / sd;
+    seSMD = seMD !== null ? seMD / sd : null;
+  }
+  if (SMD_est !== null && MD_est === null && sd !== null) {
+    MD_est = SMD_est * sd;
+    seMD = seSMD !== null ? seSMD * sd : null;
+  }
+
+  // Fisher's z ↔ r
+  if (fz_est !== null && r_est === null) {
+    r_est = (Math.exp(2 * fz_est) - 1) / (Math.exp(2 * fz_est) + 1);
+  }
+  if (r_est !== null && fz_est === null) {
+    fz_est = 0.5 * Math.log((1 + r_est) / (1 - r_est));
+    // Approx SE
+    const dr_low = (Math.exp(2 * (srcLower)) - 1) / (Math.exp(2 * (srcLower)) + 1);
+    const dr_high = (Math.exp(2 * (srcUpper)) - 1) / (Math.exp(2 * (srcUpper)) + 1);
+    if (!isNaN(dr_low) && !isNaN(dr_high)) {
+      seFZ = (srcUpper - srcLower) / 3.919928;
+    }
+  }
+
+  // --- Build result objects ---
+  function makeCI(est, se, logScale) {
+    if (se === null || se === undefined || isNaN(se)) return { lower: null, upper: null };
+    if (logScale) {
+      return {
+        lower: Math.exp(est - 1.959964 * se),
+        upper: Math.exp(est + 1.959964 * se)
+      };
+    }
+    return {
+      lower: est - 1.959964 * se,
+      upper: est + 1.959964 * se
+    };
+  }
+
+  function ratioResult(logEst, seLog, measure, formula, note, quality) {
+    if (logEst === null) return null;
+    const est = Math.exp(logEst);
+    const ci = makeCI(logEst, seLog, true);
+    return { estimate: est, lower: ci.lower, upper: ci.upper, quality: quality || 'exact', formula, note };
+  }
+
+  function naturalResult(est, se, formula, note, quality) {
+    if (est === null) return null;
+    const ci = makeCI(est, se, false);
+    return { estimate: est, lower: ci.lower, upper: ci.upper, quality: quality || 'exact', formula, note };
+  }
+
+  // Build each measure
+  results['OR'] = ratioResult(logOR_est, seLogOR, 'OR',
+    srcMeasure === 'OR' ? 'Source' :
+    (srcMeasure === 'SMD' ? 'OR = exp(SMD × π/√3)' : 'From logOR or logRR conversion'),
+    null,
+    ['OR', 'logOR'].includes(srcMeasure) ? 'exact' : (['RR', 'logRR', 'RD', 'NNT'].includes(srcMeasure) && pc !== null) ? 'exact' : (['SMD', 'MD'].includes(srcMeasure) ? 'approx' : null)
+  );
+
+  results['logOR'] = logOR_est !== null ? {
+    estimate: logOR_est,
+    lower: seLogOR !== null ? logOR_est - 1.959964 * seLogOR : null,
+    upper: seLogOR !== null ? logOR_est + 1.959964 * seLogOR : null,
+    quality: results['OR'] ? results['OR'].quality : 'exact',
+    formula: 'logOR = ln(OR)',
+    note: null
+  } : null;
+
+  results['RR'] = ratioResult(logRR_est, seLogRR, 'RR',
+    srcMeasure === 'RR' ? 'Source' :
+    (srcMeasure === 'OR' && pc !== null ? 'RR = OR / (1 − p_c + p_c × OR)' : 'Derived via RD or logOR'),
+    null,
+    ['RR', 'logRR'].includes(srcMeasure) ? 'exact' : (pc !== null ? 'exact' : null)
+  );
+
+  results['logRR'] = logRR_est !== null ? {
+    estimate: logRR_est,
+    lower: seLogRR !== null ? logRR_est - 1.959964 * seLogRR : null,
+    upper: seLogRR !== null ? logRR_est + 1.959964 * seLogRR : null,
+    quality: results['RR'] ? results['RR'].quality : 'exact',
+    formula: 'logRR = ln(RR)',
+    note: null
+  } : null;
+
+  results['RD'] = naturalResult(RD_est, seRD,
+    srcMeasure === 'RD' ? 'Source' : 'RD = p_c × (RR − 1)',
+    null,
+    ['RD', 'NNT'].includes(srcMeasure) ? 'exact' : (pc !== null ? 'exact' : null)
+  );
+
+  results['SMD'] = naturalResult(SMD_est, seSMD,
+    srcMeasure === 'SMD' ? 'Source' :
+    (srcMeasure === 'MD' ? 'SMD = MD / SD_pooled' : 'SMD = ln(OR) × √3 / π'),
+    null,
+    srcMeasure === 'SMD' ? 'exact' : (srcMeasure === 'MD' && sd !== null ? 'exact' : 'approx')
+  );
+
+  results['MD'] = naturalResult(MD_est, seMD,
+    srcMeasure === 'MD' ? 'Source' : 'MD = SMD × SD_pooled',
+    null,
+    srcMeasure === 'MD' ? 'exact' : (sd !== null ? 'exact' : null)
+  );
+
+  // HR as source — pass through, no cross-conversion to OR/RR (HR≠RR in general)
+  if (srcMeasure === 'HR') {
+    results['HR'] = ratioResult(logHR_est, seLogHR, 'HR', 'Source', null, 'exact');
+    // HR → cumulative incidence (needs baseline risk and time)
+    if (p0 !== null && tH !== null && tH > 0) {
+      const HR_val = Math.exp(logHR_est);
+      const lambda0 = -Math.log(1 - clamp01(p0)) / tH;
+      const riskT = 1 - Math.exp(-HR_val * lambda0 * tH);
+      const riskT_lower = 1 - Math.exp(-Math.exp(logHR_est - 1.959964 * seLogHR) * lambda0 * tH);
+      const riskT_upper = 1 - Math.exp(-Math.exp(logHR_est + 1.959964 * seLogHR) * lambda0 * tH);
+      results['HR_absrisk'] = {
+        estimate: riskT,
+        lower: Math.min(riskT_lower, riskT_upper),
+        upper: Math.max(riskT_lower, riskT_upper),
+        quality: 'exact',
+        formula: 'Risk(t) = 1 − exp(−HR × λ₀ × t)',
+        note: `Cumulative risk at ${tH}yr (baseline ${(p0*100).toFixed(1)}%/yr)`
+      };
+      const rd_hr = riskT - p0;
+      const rd_hr_l = Math.min(riskT_lower - p0, riskT_upper - p0);
+      const rd_hr_u = Math.max(riskT_lower - p0, riskT_upper - p0);
+      results['HR_rd'] = {
+        estimate: rd_hr,
+        lower: rd_hr_l,
+        upper: rd_hr_u,
+        quality: 'exact',
+        formula: 'RD = Risk(t) − p₀',
+        note: `Absolute risk reduction at ${tH}yr`
+      };
+      const nnt_hr = rd_hr !== 0 ? 1 / Math.abs(rd_hr) : null;
+      if (nnt_hr !== null) {
+        const nnt_hr_l = Math.min(1 / Math.abs(rd_hr_l || 1e9), 1 / Math.abs(rd_hr_u || 1e9));
+        const nnt_hr_u = Math.max(1 / Math.abs(rd_hr_l || 1e-9), 1 / Math.abs(rd_hr_u || 1e-9));
+        results['HR_nnt'] = {
+          estimate: nnt_hr,
+          lower: isFinite(nnt_hr_l) ? nnt_hr_l : null,
+          upper: isFinite(nnt_hr_u) ? nnt_hr_u : null,
+          quality: 'exact',
+          formula: 'NNT = 1/|RD|',
+          note: `NNT based on ${tH}yr absolute risk`
+        };
+      }
+    }
+  } else {
+    results['HR'] = { impossible: true, reason: 'HR requires time-to-event data; not derivable from summary stats' };
+  }
+
+  results['r'] = r_est !== null ? {
+    estimate: r_est,
+    lower: seFZ !== null ? (Math.exp(2*(fz_est-1.959964*seFZ))-1)/(Math.exp(2*(fz_est-1.959964*seFZ))+1) : null,
+    upper: seFZ !== null ? (Math.exp(2*(fz_est+1.959964*seFZ))-1)/(Math.exp(2*(fz_est+1.959964*seFZ))+1) : null,
+    quality: ['r','fisherz'].includes(srcMeasure) ? 'exact' : null,
+    formula: "r = (e^{2z}-1)/(e^{2z}+1)",
+    note: null
+  } : null;
+
+  results['fisherz'] = fz_est !== null ? {
+    estimate: fz_est,
+    lower: seFZ !== null ? fz_est - 1.959964 * seFZ : null,
+    upper: seFZ !== null ? fz_est + 1.959964 * seFZ : null,
+    quality: ['r','fisherz'].includes(srcMeasure) ? 'exact' : null,
+    formula: "z = 0.5 × ln((1+r)/(1-r))",
+    note: null
+  } : null;
+
+  // Null out impossible conversions (missing info)
+  const needsPC = ['OR','RR','RD','NNT','logOR','logRR'];
+  for (const m of needsPC) {
+    if (results[m] && results[m].quality === null) {
+      results[m] = { impossible: true, reason: 'Needs control rate (p_c)' };
+    }
+    if (results[m] && !results[m].impossible && results[m].estimate === undefined) {
+      results[m] = { impossible: true, reason: 'Cannot derive from source without additional info' };
+    }
+  }
+  if (results['SMD'] && results['SMD'].quality === null) {
+    results['SMD'] = { impossible: true, reason: 'Needs SD or OR/logOR for Hasselblad-Hedges' };
+  }
+  if (results['MD'] && results['MD'].quality === null) {
+    results['MD'] = { impossible: true, reason: 'Needs pooled SD' };
+  }
+  if (results['r'] && results['r'].quality === null) {
+    results['r'] = { impossible: true, reason: 'Cannot derive r without raw correlation' };
+  }
+  if (results['fisherz'] && results['fisherz'].quality === null) {
+    results['fisherz'] = { impossible: true, reason: 'Cannot derive z without raw correlation' };
+  }
+
+  return results;
+}
+
+// ============================================================
+// FORMATTING
+// ============================================================
+function fmtNum(x, decimals) {
+  if (x === null || x === undefined || isNaN(x) || !isFinite(x)) return '—';
+  return x.toFixed(decimals !== undefined ? decimals : 3);
+}
+
+function decimalsFor(measure) {
+  if (measure === 'NNT' || measure === 'HR_nnt') return 1;
+  if (['RD','HR_rd','HR_absrisk'].includes(measure)) return 4;
+  return 3;
+}
+
+function fmtResult(res, measure) {
+  if (!res || res.impossible) return null;
+  const d = decimalsFor(measure);
+  const est = fmtNum(res.estimate, d);
+  const lo = fmtNum(res.lower, d);
+  const hi = fmtNum(res.upper, d);
+  if (res.lower !== null && res.upper !== null) {
+    return `${est} (95% CI: ${lo}, ${hi})`;
+  }
+  return est;
+}
+
+// ============================================================
+// SINGLE CONVERSION UI
+// ============================================================
+function onSourceMeasureChange() {
+  const m = document.getElementById('sourceMeasure').value;
+  const showPC = ['OR','RR','RD','NNT','logOR','logRR'].includes(m);
+  const showSD = ['MD','SMD'].includes(m);
+  const showHR = m === 'HR';
+  document.getElementById('condControlRate').classList.toggle('visible', showPC);
+  document.getElementById('condSD').classList.toggle('visible', showSD);
+  document.getElementById('condHR').classList.toggle('visible', showHR);
+}
+
+function clearSingle() {
+  ['inputEstimate','inputLower','inputUpper','controlRate','pooledSD','baselineRisk','timeHorizon']
+    .forEach(id => { const el = document.getElementById(id); if (el) el.value = ''; });
+  document.getElementById('singleResults').classList.add('hidden');
+  document.getElementById('singleError').classList.add('hidden');
+  document.getElementById('singleError').innerHTML = '';
+}
+
+function showSingleError(msg) {
+  const el = document.getElementById('singleError');
+  el.className = 'alert alert-danger';
+  el.textContent = msg;
+}
+
+function runSingleConversion() {
+  const srcMeasure = document.getElementById('sourceMeasure').value;
+  const est = parseFloat(document.getElementById('inputEstimate').value);
+  const lo = parseFloat(document.getElementById('inputLower').value);
+  const hi = parseFloat(document.getElementById('inputUpper').value);
+
+  if (isNaN(est)) { showSingleError('Please enter a valid estimate.'); return; }
+  if (isNaN(lo) || isNaN(hi)) { showSingleError('Please enter valid CI lower and upper bounds.'); return; }
+  if (lo >= hi) { showSingleError('CI lower must be less than CI upper.'); return; }
+  if (['OR','RR','HR'].includes(srcMeasure) && (est <= 0 || lo <= 0 || hi <= 0)) {
+    showSingleError('Ratio measures (OR, RR, HR) must be positive.'); return;
+  }
+
+  const opts = {
+    controlRate: document.getElementById('controlRate').value,
+    pooledSD: document.getElementById('pooledSD').value,
+    baselineRisk: document.getElementById('baselineRisk').value,
+    timeHorizon: document.getElementById('timeHorizon').value
+  };
+
+  document.getElementById('singleError').classList.add('hidden');
+
+  const results = convertMeasure(srcMeasure, est, lo, hi, opts);
+  renderSingleResults(srcMeasure, est, lo, hi, results);
+  saveSingleState(srcMeasure, est, lo, hi, opts, results);
+}
+
+function renderSingleResults(srcMeasure, srcEst, srcLo, srcHi, results) {
+  const grid = document.getElementById('resultsGrid');
+  grid.innerHTML = '';
+
+  const displayOrder = ['OR','logOR','RR','logRR','RD','NNT','HR','HR_absrisk','HR_rd','HR_nnt','SMD','MD','r','fisherz'];
+
+  for (const measure of displayOrder) {
+    const res = results[measure];
+    if (!res) continue;
+    if (['HR_absrisk','HR_rd','HR_nnt'].includes(measure) && !res) continue;
+
+    const isSource = measure === srcMeasure;
+    let quality = isSource ? 'source' : (res.impossible ? 'impossible' : res.quality || 'impossible');
+    if (quality === null) quality = 'impossible';
+
+    const card = document.createElement('div');
+    card.className = `result-card ${quality}`;
+
+    const badge = quality === 'source' ? 'INPUT' : quality === 'exact' ? 'EXACT' : quality === 'approx' ? 'APPROX' : 'N/A';
+    const labelText = MEASURE_LABELS[measure] || measure;
+    let valueText = '—';
+    let ciText = '';
+    let formulaText = '';
+
+    if (isSource) {
+      const d = decimalsFor(measure);
+      valueText = fmtNum(srcEst, d);
+      ciText = `(95% CI: ${fmtNum(srcLo, d)}, ${fmtNum(srcHi, d)})`;
+      formulaText = 'Source measure';
+    } else if (!res.impossible) {
+      const d = decimalsFor(measure);
+      valueText = fmtNum(res.estimate, d);
+      if (res.lower !== null && res.upper !== null) {
+        ciText = `(95% CI: ${fmtNum(res.lower, d)}, ${fmtNum(res.upper, d)})`;
+      } else {
+        ciText = '(CI not available)';
+      }
+      formulaText = res.formula || '';
+    } else {
+      valueText = 'N/A';
+      ciText = res.reason || 'Cannot convert';
+    }
+
+    const copyText = isSource
+      ? `${labelText}: ${valueText} ${ciText}`
+      : (!res.impossible ? `${labelText}: ${valueText} ${ciText}` : `${labelText}: N/A`);
+
+    card.innerHTML = `
+      <span class="result-badge">${badge}</span>
+      <div class="result-label">${labelText}</div>
+      <div class="result-value">${valueText}</div>
+      <div class="result-ci">${ciText}</div>
+      ${formulaText ? `<div class="result-formula">${formulaText}</div>` : ''}
+      ${res.note ? `<div class="result-formula" style="margin-top:2px;font-style:normal;">${res.note}</div>` : ''}
+      ${!res.impossible ? `<span class="copy-btn-small" onclick="copyText('${copyText.replace(/'/g,"\\'")}', this)">copy</span>` : ''}
+    `;
+    grid.appendChild(card);
+  }
+
+  document.getElementById('singleResults').classList.remove('hidden');
+}
+
+function copyText(txt, el) {
+  navigator.clipboard.writeText(txt).then(() => {
+    const prev = el.textContent;
+    el.textContent = 'copied!';
+    setTimeout(() => { el.textContent = prev; }, 1200);
+  }).catch(() => {
+    const ta = document.createElement('textarea');
+    ta.value = txt;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    const prev = el.textContent;
+    el.textContent = 'copied!';
+    setTimeout(() => { el.textContent = prev; }, 1200);
+  });
+}
+
+function copyAllResults() {
+  const cards = document.querySelectorAll('#resultsGrid .result-card:not(.impossible)');
+  const lines = [];
+  cards.forEach(card => {
+    const label = card.querySelector('.result-label').textContent;
+    const val = card.querySelector('.result-value').textContent;
+    const ci = card.querySelector('.result-ci').textContent;
+    lines.push(`${label}: ${val} ${ci}`);
+  });
+  copyText(lines.join('\n'), document.querySelector('.btn-row .btn-secondary'));
+}
+
+// ============================================================
+// EXAMPLES
+// ============================================================
+function loadExample(name) {
+  clearSingle();
+  const src = document.getElementById('sourceMeasure');
+  const est = document.getElementById('inputEstimate');
+  const lo = document.getElementById('inputLower');
+  const hi = document.getElementById('inputUpper');
+  const pc = document.getElementById('controlRate');
+  const sd = document.getElementById('pooledSD');
+  const p0 = document.getElementById('baselineRisk');
+  const tH = document.getElementById('timeHorizon');
+
+  if (name === 'statin') {
+    src.value = 'OR'; est.value = '0.71'; lo.value = '0.63'; hi.value = '0.80'; pc.value = '0.10';
+  } else if (name === 'exercise') {
+    src.value = 'SMD'; est.value = '-0.62'; lo.value = '-0.81'; hi.value = '-0.42';
+  } else if (name === 'doac') {
+    src.value = 'HR'; est.value = '0.81'; lo.value = '0.73'; hi.value = '0.91';
+    p0.value = '0.05'; tH.value = '1';
+  }
+
+  onSourceMeasureChange();
+  runSingleConversion();
+}
+
+// ============================================================
+// BATCH CONVERSION
+// ============================================================
+function parseBatchCSV(text) {
+  const lines = text.trim().split('\n').filter(l => l.trim().length > 0);
+  if (lines.length < 2) throw new Error('Need at least 1 header row + 1 data row');
+  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+  const rows = [];
+  for (let i = 1; i < lines.length; i++) {
+    const vals = lines[i].split(',').map(v => v.trim());
+    const row = {};
+    headers.forEach((h, j) => { row[h] = vals[j] || ''; });
+    rows.push(row);
+  }
+  return rows;
+}
+
+let batchResultsData = null;
+
+function runBatchConversion() {
+  const csvText = document.getElementById('batchCSV').value;
+  const targetMeasure = document.getElementById('batchTarget').value;
+  const errEl = document.getElementById('batchError');
+  errEl.className = 'hidden'; errEl.innerHTML = '';
+
+  let rows;
+  try {
+    rows = parseBatchCSV(csvText);
+  } catch (e) {
+    errEl.className = 'alert alert-danger'; errEl.textContent = e.message; return;
+  }
+
+  const required = ['study','measure','estimate','ci_lower','ci_upper'];
+  const headers = Object.keys(rows[0]);
+  const missing = required.filter(r => !headers.includes(r));
+  if (missing.length > 0) {
+    errEl.className = 'alert alert-danger';
+    errEl.textContent = 'Missing columns: ' + missing.join(', ');
+    return;
+  }
+
+  const resultRows = [];
+  for (const row of rows) {
+    const srcM = row.measure.toUpperCase() === 'FISHERZ' ? 'fisherz' :
+                 row.measure.toUpperCase() === 'R' ? 'r' :
+                 row.measure.toUpperCase();
+    const est = parseFloat(row.estimate);
+    const lo = parseFloat(row.ci_lower);
+    const hi = parseFloat(row.ci_upper);
+    const opts = {
+      controlRate: row.control_rate || '',
+      pooledSD: row.sd || '',
+      baselineRisk: '',
+      timeHorizon: ''
+    };
+    let converted = null;
+    let note = '';
+    if (isNaN(est) || isNaN(lo) || isNaN(hi)) {
+      note = 'Invalid numeric input';
+    } else {
+      try {
+        const allRes = convertMeasure(srcM, est, lo, hi, opts);
+        const res = allRes[targetMeasure];
+        if (!res || res.impossible) {
+          note = res ? res.reason : 'Cannot convert';
+        } else {
+          const d = decimalsFor(targetMeasure);
+          converted = {
+            estimate: fmtNum(res.estimate, d),
+            lower: fmtNum(res.lower, d),
+            upper: fmtNum(res.upper, d),
+            quality: res.quality
+          };
+        }
+      } catch (e) {
+        note = 'Error: ' + e.message;
+      }
+    }
+    resultRows.push({
+      study: row.study,
+      source_measure: srcM,
+      source_estimate: row.estimate,
+      source_lower: row.ci_lower,
+      source_upper: row.ci_upper,
+      target_measure: targetMeasure,
+      converted,
+      note
+    });
+  }
+
+  batchResultsData = { rows: resultRows, targetMeasure };
+  renderBatchResults(resultRows, targetMeasure);
+}
+
+function renderBatchResults(rows, target) {
+  const head = document.getElementById('batchResultHead');
+  const body = document.getElementById('batchResultBody');
+  head.innerHTML = `<tr>
+    <th>Study</th>
+    <th>Source</th>
+    <th>Estimate</th>
+    <th>CI Lower</th>
+    <th>CI Upper</th>
+    <th>${target} Estimate</th>
+    <th>${target} CI Lower</th>
+    <th>${target} CI Upper</th>
+    <th>Quality</th>
+    <th>Note</th>
+  </tr>`;
+  body.innerHTML = '';
+  for (const r of rows) {
+    const c = r.converted;
+    const tr = document.createElement('tr');
+    tr.innerHTML = `
+      <td>${r.study}</td>
+      <td>${r.source_measure}</td>
+      <td>${r.source_estimate}</td>
+      <td>${r.source_lower}</td>
+      <td>${r.source_upper}</td>
+      <td class="${c ? 'converted' : 'impossible'}">${c ? c.estimate : '—'}</td>
+      <td class="${c ? 'converted' : 'impossible'}">${c ? c.lower : '—'}</td>
+      <td class="${c ? 'converted' : 'impossible'}">${c ? c.upper : '—'}</td>
+      <td>${c ? (c.quality || '') : ''}</td>
+      <td class="text-muted">${r.note}</td>
+    `;
+    body.appendChild(tr);
+  }
+  document.getElementById('batchResultsSection').classList.remove('hidden');
+}
+
+function downloadBatchCSV() {
+  if (!batchResultsData) return;
+  const { rows, targetMeasure } = batchResultsData;
+  const header = ['study','source_measure','source_estimate','source_lower','source_upper',
+    `${targetMeasure}_estimate`, `${targetMeasure}_lower`, `${targetMeasure}_upper`, 'quality', 'note'];
+  const csvLines = [header.join(',')];
+  for (const r of rows) {
+    const c = r.converted;
+    csvLines.push([
+      r.study, r.source_measure, r.source_estimate, r.source_lower, r.source_upper,
+      c ? c.estimate : '', c ? c.lower : '', c ? c.upper : '',
+      c ? (c.quality || '') : '', r.note
+    ].join(','));
+  }
+  triggerDownload(csvLines.join('\n'), 'ma-converter-batch.csv', 'text/csv');
+}
+
+function copyBatchResults() {
+  if (!batchResultsData) return;
+  const { rows, targetMeasure } = batchResultsData;
+  const lines = rows.map(r => {
+    const c = r.converted;
+    return c
+      ? `${r.study}: ${r.source_measure}=${r.source_estimate} → ${targetMeasure}=${c.estimate} (${c.lower}, ${c.upper})`
+      : `${r.study}: ${r.source_measure}=${r.source_estimate} → ${targetMeasure}=N/A (${r.note})`;
+  });
+  navigator.clipboard.writeText(lines.join('\n')).catch(() => {});
+}
+
+function loadBatchExample() {
+  document.getElementById('batchCSV').value =
+`study,measure,estimate,ci_lower,ci_upper,control_rate,sd
+HOPE 2022,OR,0.71,0.63,0.80,0.10,
+TOPCAT 2020,OR,0.85,0.74,0.98,0.12,
+ExCHANGE 2021,SMD,-0.62,-0.81,-0.42,,
+RIVER 2019,RR,0.78,0.68,0.89,0.15,
+ARISE-HF 2023,RD,-0.032,-0.051,-0.013,,`;
+  document.getElementById('batchTarget').value = 'OR';
+}
+
+// ============================================================
+// FORMULAS REFERENCE
+// ============================================================
+const FORMULA_DATA = [
+  {
+    title: 'OR ↔ RR (requires control rate)',
+    equations: [
+      'RR = OR / (1 − p_c + p_c × OR)',
+      'OR = (p_t/(1−p_t)) / (p_c/(1−p_c))  where p_t = p_c × RR'
+    ],
+    ci: 'Apply same formula to OR_lower and OR_upper (exact propagation).',
+    note: 'Valid only when p_c is known. OR overestimates RR when events are common (>10%).',
+    ref: 'Zhang & Yu (1998) JAMA 280:1690; Greenland (1987) Am J Epidemiol'
+  },
+  {
+    title: 'OR ↔ logOR',
+    equations: [
+      'logOR = ln(OR)',
+      'SE_logOR = (ln(CI_upper) − ln(CI_lower)) / 3.920',
+      'CI: exp(logOR ± 1.96 × SE_logOR)'
+    ],
+    ci: 'Work on log scale — exactly symmetric, preferred for meta-analysis.',
+    note: 'The 3.920 = 2 × 1.96 (two-sided 95% CI).',
+    ref: 'DerSimonian & Laird (1986) Control Clin Trials'
+  },
+  {
+    title: 'RR ↔ RD',
+    equations: [
+      'RD = p_c × (RR − 1)',
+      'RR = 1 + RD / p_c'
+    ],
+    ci: 'Delta method: SE_RD = SE_logRR × p_c × RR',
+    note: 'p_c = baseline (control) event rate required.',
+    ref: 'Altman & Andersen (1999) BMJ'
+  },
+  {
+    title: 'RD ↔ NNT',
+    equations: [
+      'NNT = 1 / |RD|',
+      'RD = 1 / NNT  (with sign indicating benefit/harm)'
+    ],
+    ci: 'CI for NNT = [1/|RD_upper|, 1/|RD_lower|]\nNote: CI inverts order. Undefined when CI crosses zero.',
+    note: 'Negative RD = treatment reduces events (NNT to benefit). Positive = harm (NNH).',
+    ref: 'Laupacis et al (1988) NEJM; Altman (1998) BMJ'
+  },
+  {
+    title: 'OR ↔ SMD (Hasselblad-Hedges)',
+    equations: [
+      'SMD = ln(OR) × √3 / π',
+      'OR = exp(SMD × π / √3)'
+    ],
+    ci: 'SE_SMD = SE_logOR × √3 / π  (linear transformation, exact)',
+    note: 'Assumes underlying logistic distribution. Approximation — use with caution when combining OR and SMD in same MA.',
+    ref: 'Hasselblad & Hedges (1995) Med Care; Chinn (2000) Stat Med'
+  },
+  {
+    title: 'SMD ↔ MD',
+    equations: [
+      'SMD = MD / SD_pooled',
+      'MD = SMD × SD_pooled'
+    ],
+    ci: 'SE_SMD = SE_MD / SD_pooled\nSE_MD = SE_SMD × SD_pooled',
+    note: 'SD_pooled = √[(n₁−1)×SD₁² + (n₂−1)×SD₂²) / (n₁+n₂−2)]',
+    ref: "Cohen (1988) Statistical Power Analysis; Hedges' g adds small-sample correction"
+  },
+  {
+    title: 'Fisher\'s z ↔ Correlation r',
+    equations: [
+      'z = 0.5 × ln((1+r)/(1−r))  [Fisher z-transformation]',
+      'r = (e^{2z}−1) / (e^{2z}+1)'
+    ],
+    ci: 'SE_z ≈ 1/√(n−3)  (when n known)\nCI_r: back-transform CI on z scale',
+    note: 'Fisher z stabilizes variance. Always pool correlations on z scale, then back-transform.',
+    ref: 'Fisher (1921) Metron; Schmidt & Hunter (1996)'
+  },
+  {
+    title: 'HR → Cumulative Incidence',
+    equations: [
+      'S(t) = exp(−HR × λ₀ × t)',
+      'Risk(t) = 1 − S(t)',
+      'λ₀ = −ln(1 − p_baseline) / t_baseline'
+    ],
+    ci: 'Apply to HR_lower and HR_upper; note direction of CI.',
+    note: 'Assumes constant HR (proportional hazards) and exponential baseline. Only valid if PH holds.',
+    ref: 'Altman & Andersen (1999) BMJ; Royston & Parmar (2011)'
+  },
+  {
+    title: 'logRR ↔ RR',
+    equations: [
+      'logRR = ln(RR)',
+      'SE_logRR = (ln(CI_upper) − ln(CI_lower)) / 3.920'
+    ],
+    ci: 'Back-transform: RR = exp(logRR); CI = exp(logRR ± 1.96 × SE_logRR)',
+    note: 'Meta-analysis pooling done on log scale for symmetry and better normal approximation.',
+    ref: 'Greenland & Rothman (1998) Modern Epidemiology'
+  },
+  {
+    title: 'Delta Method (General)',
+    equations: [
+      'If Y = f(X), SE_Y ≈ |f\'(X)| × SE_X',
+      'CI_Y: Y ± 1.96 × SE_Y'
+    ],
+    ci: 'For ratio measures, work on log scale. For probabilities, use logit scale when near 0/1.',
+    note: 'First-order Taylor approximation. Works well when SE is small relative to estimate.',
+    ref: 'Oehlert (1992) Am Statistician; Agresti (2002) Categorical Data Analysis'
+  }
+];
+
+function buildFormulasTab() {
+  const grid = document.getElementById('formulaGrid');
+  grid.innerHTML = '';
+  FORMULA_DATA.forEach((fd, idx) => {
+    const card = document.createElement('div');
+    card.className = 'formula-card';
+    card.innerHTML = `
+      <div class="formula-header" onclick="toggleFormulaCard(${idx})">
+        <span class="formula-title">${fd.title}</span>
+        <span class="toggle-arrow">▼</span>
+      </div>
+      <div class="formula-body">
+        ${fd.equations.map(eq => `<div class="formula-math">${eq}</div>`).join('')}
+        <div class="formula-note"><strong>CI propagation:</strong> ${fd.ci}</div>
+        <div class="formula-note mt-1">${fd.note}</div>
+        <div class="formula-ref mt-1"><em>Ref:</em> ${fd.ref}</div>
+      </div>
+    `;
+    grid.appendChild(card);
+  });
+}
+
+function toggleFormulaCard(idx) {
+  const cards = document.querySelectorAll('.formula-card');
+  cards[idx].classList.toggle('open');
+}
+
+// ============================================================
+// STATE PERSISTENCE
+// ============================================================
+let lastSingleResults = null;
+
+function saveSingleState(srcMeasure, est, lo, hi, opts, results) {
+  lastSingleResults = { srcMeasure, est, lo, hi, opts, results, ts: Date.now() };
+  try {
+    localStorage.setItem('maconv_single', JSON.stringify(lastSingleResults));
+  } catch(e) {}
+}
+
+function restoreState() {
+  try {
+    const saved = localStorage.getItem('maconv_single');
+    if (!saved) return;
+    const s = JSON.parse(saved);
+    if (!s || !s.srcMeasure) return;
+    document.getElementById('sourceMeasure').value = s.srcMeasure;
+    document.getElementById('inputEstimate').value = s.est;
+    document.getElementById('inputLower').value = s.lo;
+    document.getElementById('inputUpper').value = s.hi;
+    if (s.opts) {
+      if (s.opts.controlRate) document.getElementById('controlRate').value = s.opts.controlRate;
+      if (s.opts.pooledSD) document.getElementById('pooledSD').value = s.opts.pooledSD;
+      if (s.opts.baselineRisk) document.getElementById('baselineRisk').value = s.opts.baselineRisk;
+      if (s.opts.timeHorizon) document.getElementById('timeHorizon').value = s.opts.timeHorizon;
+    }
+    onSourceMeasureChange();
+    lastSingleResults = s;
+    renderSingleResults(s.srcMeasure, s.est, s.lo, s.hi, s.results);
+  } catch(e) {}
+}
+
+// ============================================================
+// EXPORT TAB
+// ============================================================
+function refreshExportPreview() {
+  const emptyEl = document.getElementById('exportEmpty');
+  const actionsEl = document.getElementById('exportActions');
+  const previewEl = document.getElementById('exportPreview');
+
+  const hasSingle = lastSingleResults !== null;
+  const hasBatch = batchResultsData !== null;
+
+  if (!hasSingle && !hasBatch) {
+    emptyEl.classList.remove('hidden');
+    actionsEl.classList.add('hidden');
+    return;
+  }
+
+  emptyEl.classList.add('hidden');
+  actionsEl.classList.remove('hidden');
+
+  const lines = [];
+  lines.push('MA CONVERTER — EXPORT');
+  lines.push('='.repeat(50));
+  lines.push(`Generated: ${new Date().toISOString()}`);
+  lines.push('');
+
+  if (hasSingle) {
+    const s = lastSingleResults;
+    lines.push('SINGLE CONVERSION');
+    lines.push('-'.repeat(30));
+    lines.push(`Source: ${s.srcMeasure} = ${s.est} (95% CI: ${s.lo}, ${s.hi})`);
+    if (s.opts && s.opts.controlRate) lines.push(`Control rate: ${s.opts.controlRate}`);
+    if (s.opts && s.opts.pooledSD) lines.push(`Pooled SD: ${s.opts.pooledSD}`);
+    if (s.opts && s.opts.baselineRisk) lines.push(`Baseline risk: ${s.opts.baselineRisk}`);
+    if (s.opts && s.opts.timeHorizon) lines.push(`Time horizon: ${s.opts.timeHorizon} yr`);
+    lines.push('');
+    lines.push('Results:');
+    const displayOrder = ['OR','logOR','RR','logRR','RD','NNT','HR','HR_absrisk','HR_rd','HR_nnt','SMD','MD','r','fisherz'];
+    for (const m of displayOrder) {
+      const res = s.results[m];
+      if (!res) continue;
+      const label = MEASURE_LABELS[m] || m;
+      if (res.impossible) {
+        lines.push(`  ${label}: N/A (${res.reason})`);
+      } else {
+        const d = decimalsFor(m);
+        lines.push(`  ${label}: ${fmtNum(res.estimate,d)} (95% CI: ${fmtNum(res.lower,d)}, ${fmtNum(res.upper,d)}) [${res.quality}]`);
+      }
+    }
+    lines.push('');
+  }
+
+  if (hasBatch) {
+    lines.push('BATCH CONVERSION');
+    lines.push('-'.repeat(30));
+    lines.push(`Target: ${batchResultsData.targetMeasure}`);
+    lines.push('');
+    for (const r of batchResultsData.rows) {
+      const c = r.converted;
+      const s = c
+        ? `${r.target_measure}=${c.estimate} (${c.lower}, ${c.upper}) [${c.quality}]`
+        : `N/A — ${r.note}`;
+      lines.push(`  ${r.study}: ${r.source_measure}=${r.source_estimate} → ${s}`);
+    }
+    lines.push('');
+  }
+
+  previewEl.textContent = lines.join('\n');
+}
+
+function copyExportText() {
+  const text = document.getElementById('exportPreview').textContent;
+  navigator.clipboard.writeText(text).catch(() => {});
+}
+
+function downloadExportCSV() {
+  if (!lastSingleResults && !batchResultsData) return;
+  const lines = [];
+  if (lastSingleResults) {
+    const s = lastSingleResults;
+    lines.push(['source_measure','source_estimate','source_lower','source_upper','target_measure','target_estimate','target_lower','target_upper','quality'].join(','));
+    const displayOrder = ['OR','logOR','RR','logRR','RD','NNT','HR','SMD','MD','r','fisherz'];
+    for (const m of displayOrder) {
+      const res = s.results[m];
+      if (!res || res.impossible) continue;
+      const d = decimalsFor(m);
+      lines.push([s.srcMeasure, s.est, s.lo, s.hi, m, fmtNum(res.estimate,d), fmtNum(res.lower,d), fmtNum(res.upper,d), res.quality].join(','));
+    }
+  }
+  triggerDownload(lines.join('\n'), 'ma-converter-results.csv', 'text/csv');
+}
+
+function downloadHTMLReport() {
+  const preview = document.getElementById('exportPreview').textContent;
+  const html = `<!DOCTYPE html><html><head><meta charset="UTF-8"><title>MA Converter Report</title>
+<style>body{font-family:monospace;padding:20px;max-width:800px;margin:auto;}pre{white-space:pre-wrap;}</style>
+</head><body><h1>MA Converter Report</h1><pre>${preview.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}</pre></body></html>`;
+  triggerDownload(html, 'ma-converter-report.html', 'text/html');
+}
+
+// ============================================================
+// UTILITIES
+// ============================================================
+function triggerDownload(content, filename, mime) {
+  const blob = new Blob([content], { type: mime });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ============================================================
+// INIT
+// ============================================================
+document.addEventListener('DOMContentLoaded', function() {
+  buildFormulasTab();
+  restoreState();
+  onSourceMeasureChange();
+});
+</script>
+</body>
+</html>
