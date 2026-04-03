@@ -44,19 +44,23 @@ When source is `r`, the SE for Fisher's z is computed from the CI of z. But the 
 ### P2-1: `MEASURE_LABELS` has escaped quotes in string
 **Line:** 633
 `'SMD / Cohen\'s d'` — works but template literals would be cleaner.
+**Status:** FIXED — changed to double-quoted string
 
 ### P2-2: Export CSV doesn't quote fields
 **Lines:** 1640-1651
 Single conversion export CSV uses `.join(',')` without quoting fields that might contain commas.
+**Status:** FIXED — use csvSafeField() for string columns in single export CSV
 
 ### P2-3: Batch CSV parser doesn't handle quoted fields
 **Lines:** 1226-1236
 `lines[i].split(',')` does not handle quoted fields with embedded commas. Standard CSV may have `"value, with comma"`.
+**Status:** FIXED — added splitCSVLine() with RFC 4180 compliant quoted-field parsing
 
 ### P2-4: Dark mode emoji in button
 **Line:** 372
 Uses emoji (`🌙` / `☀️`) for theme toggle which may not render consistently across platforms.
+**Status:** FIXED — replaced emoji with text labels "Dark"/"Light" + added aria-label
 
 ---
 
-**Summary:** 3 P0 fixed, 4 P1 found, 4 P2 found
+**Summary:** 3 P0 fixed, 4 P1 found, 4 P2 fixed. 59/59 tests pass.

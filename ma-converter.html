@@ -369,7 +369,7 @@ td.impossible { color: var(--muted); font-style: italic; }
     <div class="app-subtitle">Universal Effect Size Translator for Meta-Analysis</div>
   </div>
   <div class="header-controls">
-    <button class="btn-icon" id="themeToggleBtn" title="Toggle dark/light mode" onclick="toggleTheme()">🌙</button>
+    <button class="btn-icon" id="themeToggleBtn" title="Toggle dark/light mode" aria-label="Toggle dark mode" onclick="toggleTheme()">Dark</button>
   </div>
 </header>
 
@@ -597,7 +597,7 @@ Study D,RR,0.78,0.68,0.89,0.15"></textarea>
   const saved = localStorage.getItem('maconv_theme') || 'light';
   document.body.setAttribute('data-theme', saved);
   const btn = document.getElementById('themeToggleBtn');
-  if (btn) btn.textContent = saved === 'dark' ? '☀️' : '🌙';
+  if (btn) btn.textContent = saved === 'dark' ? 'Light' : 'Dark';
 })();
 
 function toggleTheme() {
@@ -605,7 +605,7 @@ function toggleTheme() {
   const current = body.getAttribute('data-theme');
   const next = current === 'dark' ? 'light' : 'dark';
   body.setAttribute('data-theme', next);
-  document.getElementById('themeToggleBtn').textContent = next === 'dark' ? '☀️' : '🌙';
+  document.getElementById('themeToggleBtn').textContent = next === 'dark' ? 'Light' : 'Dark';
   localStorage.setItem('maconv_theme', next);
 }
 
@@ -630,7 +630,7 @@ const MEASURE_LABELS = {
   RD: 'RD',
   NNT: 'NNT',
   HR: 'HR',
-  SMD: 'SMD / Cohen\'s d',
+  SMD: "SMD / Cohen's d",
   MD: 'MD',
   logOR: 'log OR',
   logRR: 'log RR',
@@ -1222,13 +1222,36 @@ function loadExample(name) {
 // ============================================================
 // BATCH CONVERSION
 // ============================================================
+function splitCSVLine(line) {
+  const fields = [];
+  let cur = '', inQuotes = false;
+  for (let i = 0; i < line.length; i++) {
+    const ch = line[i];
+    if (inQuotes) {
+      if (ch === '"' && i + 1 < line.length && line[i + 1] === '"') {
+        cur += '"'; i++;
+      } else if (ch === '"') {
+        inQuotes = false;
+      } else {
+        cur += ch;
+      }
+    } else {
+      if (ch === '"') { inQuotes = true; }
+      else if (ch === ',') { fields.push(cur.trim()); cur = ''; }
+      else { cur += ch; }
+    }
+  }
+  fields.push(cur.trim());
+  return fields;
+}
+
 function parseBatchCSV(text) {
   const lines = text.trim().split('\n').filter(l => l.trim().length > 0);
   if (lines.length < 2) throw new Error('Need at least 1 header row + 1 data row');
-  const headers = lines[0].split(',').map(h => h.trim().toLowerCase());
+  const headers = splitCSVLine(lines[0]).map(h => h.toLowerCase());
   const rows = [];
   for (let i = 1; i < lines.length; i++) {
-    const vals = lines[i].split(',').map(v => v.trim());
+    const vals = splitCSVLine(lines[i]);
     const row = {};
     headers.forEach((h, j) => { row[h] = vals[j] || ''; });
     rows.push(row);
@@ -1650,7 +1673,7 @@ function downloadExportCSV() {
       const res = s.results[m];
       if (!res || res.impossible) continue;
       const d = decimalsFor(m);
-      lines.push([s.srcMeasure, s.est, s.lo, s.hi, m, fmtNum(res.estimate,d), fmtNum(res.lower,d), fmtNum(res.upper,d), res.quality].join(','));
+      lines.push([csvSafeField(s.srcMeasure), s.est, s.lo, s.hi, csvSafeField(m), fmtNum(res.estimate,d), fmtNum(res.lower,d), fmtNum(res.upper,d), csvSafeField(res.quality)].join(','));
     }
   }
   triggerDownload(lines.join('\n'), 'ma-converter-results.csv', 'text/csv');
