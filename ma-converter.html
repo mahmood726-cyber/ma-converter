@@ -1154,7 +1154,7 @@ function renderSingleResults(srcMeasure, srcEst, srcLo, srcHi, results) {
       <div class="result-ci">${ciText}</div>
       ${formulaText ? `<div class="result-formula">${formulaText}</div>` : ''}
       ${res.note ? `<div class="result-formula" style="margin-top:2px;font-style:normal;">${res.note}</div>` : ''}
-      ${!res.impossible ? `<span class="copy-btn-small" onclick="copyText('${copyText.replace(/'/g,"\\'")}', this)">copy</span>` : ''}
+      ${!res.impossible ? `<span class="copy-btn-small" onclick="copyText('${copyText.replace(/\\/g,"\\\\").replace(/'/g,"\\'").replace(/"/g,"&quot;")}', this)">copy</span>` : ''}
     `;
     grid.appendChild(card);
   }
@@ -1349,6 +1349,12 @@ function renderBatchResults(rows, target) {
   document.getElementById('batchResultsSection').classList.remove('hidden');
 }
 
+function csvSafeField(v) {
+  let s = String(v == null ? '' : v);
+  if (/^[=+@\t\r]/.test(s)) s = "'" + s;
+  return '"' + s.replace(/"/g, '""') + '"';
+}
+
 function downloadBatchCSV() {
   if (!batchResultsData) return;
   const { rows, targetMeasure } = batchResultsData;
@@ -1358,9 +1364,9 @@ function downloadBatchCSV() {
   for (const r of rows) {
     const c = r.converted;
     csvLines.push([
-      r.study, r.source_measure, r.source_estimate, r.source_lower, r.source_upper,
+      csvSafeField(r.study), csvSafeField(r.source_measure), r.source_estimate, r.source_lower, r.source_upper,
       c ? c.estimate : '', c ? c.lower : '', c ? c.upper : '',
-      c ? (c.quality || '') : '', r.note
+      c ? csvSafeField(c.quality || '') : '', csvSafeField(r.note)
     ].join(','));
   }
   triggerDownload(csvLines.join('\n'), 'ma-converter-batch.csv', 'text/csv');
@@ -1683,4 +1689,5 @@ document.addEventListener('DOMContentLoaded', function() {
 });
 </script>
 </body>
+</html>
 </html>
