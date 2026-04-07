@@ -1,0 +1,1688 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MAConverter — Universal Effect Size Translator</title>
+<style>
+/* ===== CSS VARIABLES ===== */
+:root {
+  --bg: #0f0f1a;
+  --bg2: #161625;
+  --bg3: #1e1e30;
+  --bg4: #252538;
+  --border: #2e2e4a;
+  --border2: #3a3a5c;
+  --text: #e8e8f0;
+  --text2: #a8a8c0;
+  --text3: #6868888;
+  --accent: #7b6ff0;
+  --accent2: #5a52d5;
+  --accent3: #9f95f5;
+  --green: #4caf82;
+  --green2: #38a06c;
+  --amber: #f0b55a;
+  --amber2: #d9a245;
+  --red: #e05c6a;
+  --red2: #c94a58;
+  --cyan: #4fc4d8;
+  --pink: #d46fbc;
+  --radius: 8px;
+  --radius2: 12px;
+  --shadow: 0 2px 12px rgba(0,0,0,0.4);
+  --shadow2: 0 4px 24px rgba(0,0,0,0.6);
+  --transition: 0.15s ease;
+}
+body.light-mode {
+  --bg: #f0f0f8;
+  --bg2: #ffffff;
+  --bg3: #f7f7ff;
+  --bg4: #ebebf5;
+  --border: #d0d0e8;
+  --border2: #b8b8d8;
+  --text: #1a1a2e;
+  --text2: #4a4a6a;
+  --accent: #5548c8;
+  --accent2: #4038b8;
+  --accent3: #6a60d8;
+  --green: #1a7a4f;
+  --green2: #0e6040;
+  --amber: #b07820;
+  --amber2: #906010;
+  --red: #c03040;
+  --red2: #a82030;
+  --cyan: #1a8a9a;
+  --pink: #a040a0;
+}
+
+/* ===== RESET ===== */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+html { font-size: 15px; scroll-behavior: smooth; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+  line-height: 1.5;
+  min-height: 100vh;
+  transition: background var(--transition), color var(--transition);
+}
+
+/* ===== HEADER ===== */
+.app-header {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0.75rem 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  box-shadow: var(--shadow);
+}
+.app-title {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+.app-title h1 {
+  font-size: 1.2rem;
+  font-weight: 700;
+  color: var(--accent3);
+  letter-spacing: -0.01em;
+}
+.app-title .tagline {
+  font-size: 0.8rem;
+  color: var(--text2);
+}
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.btn-icon {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  border-radius: var(--radius);
+  padding: 0.35rem 0.7rem;
+  cursor: pointer;
+  font-size: 0.82rem;
+  transition: all var(--transition);
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+.btn-icon:hover { background: var(--bg4); color: var(--text); border-color: var(--border2); }
+.btn-icon:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ===== TABS ===== */
+.tab-bar {
+  background: var(--bg2);
+  border-bottom: 1px solid var(--border);
+  padding: 0 1.5rem;
+  display: flex;
+  gap: 0;
+  overflow-x: auto;
+}
+.tab-btn {
+  background: transparent;
+  border: none;
+  color: var(--text2);
+  padding: 0.7rem 1.2rem;
+  cursor: pointer;
+  font-size: 0.88rem;
+  font-weight: 500;
+  border-bottom: 2px solid transparent;
+  transition: all var(--transition);
+  white-space: nowrap;
+}
+.tab-btn:hover { color: var(--text); }
+.tab-btn.active { color: var(--accent3); border-bottom-color: var(--accent); }
+.tab-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: -2px; }
+
+/* ===== MAIN LAYOUT ===== */
+.tab-panel { display: none; }
+.tab-panel.active { display: block; }
+.main-content { padding: 1.5rem; max-width: 1200px; margin: 0 auto; }
+
+/* ===== CARDS ===== */
+.card {
+  background: var(--bg2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius2);
+  padding: 1.25rem 1.5rem;
+  margin-bottom: 1.25rem;
+}
+.card-title {
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--accent3);
+  margin-bottom: 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+/* ===== FORM ELEMENTS ===== */
+.form-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 0.75rem 1rem;
+}
+.form-group { display: flex; flex-direction: column; gap: 0.3rem; }
+.form-group label {
+  font-size: 0.8rem;
+  color: var(--text2);
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+.form-group input, .form-group select {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+  border-radius: var(--radius);
+  padding: 0.5rem 0.75rem;
+  font-size: 0.9rem;
+  transition: border-color var(--transition), box-shadow var(--transition);
+  width: 100%;
+}
+.form-group input:focus, .form-group select:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(123,111,240,0.2);
+}
+.form-group input::placeholder { color: var(--text2); opacity: 0.5; }
+
+/* ===== BUTTONS ===== */
+.btn {
+  background: var(--accent);
+  border: none;
+  color: #fff;
+  border-radius: var(--radius);
+  padding: 0.55rem 1.2rem;
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: all var(--transition);
+}
+.btn:hover { background: var(--accent2); transform: translateY(-1px); box-shadow: var(--shadow); }
+.btn:active { transform: translateY(0); }
+.btn:focus-visible { outline: 2px solid var(--accent3); outline-offset: 2px; }
+.btn-secondary {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text);
+}
+.btn-secondary:hover { background: var(--bg4); border-color: var(--border2); }
+.btn-green { background: var(--green); }
+.btn-green:hover { background: var(--green2); }
+.btn-amber { background: var(--amber); color: #1a1a1a; }
+.btn-amber:hover { background: var(--amber2); }
+
+/* ===== RESULTS TABLE ===== */
+.results-grid {
+  display: grid;
+  gap: 0.5rem;
+}
+.result-row {
+  display: grid;
+  grid-template-columns: 140px 1fr 1fr 2fr;
+  gap: 0.75rem;
+  align-items: center;
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.6rem 1rem;
+  transition: border-color var(--transition);
+}
+.result-row:hover { border-color: var(--border2); }
+.result-row.highlight { border-color: var(--accent); background: rgba(123,111,240,0.08); }
+.result-row.warn { border-color: var(--amber); background: rgba(240,181,90,0.08); }
+.result-row.na { opacity: 0.5; }
+.result-label {
+  font-weight: 600;
+  font-size: 0.88rem;
+  color: var(--accent3);
+}
+.result-value {
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.result-ci {
+  font-size: 0.82rem;
+  color: var(--text2);
+  font-variant-numeric: tabular-nums;
+}
+.result-note {
+  font-size: 0.75rem;
+  color: var(--text2);
+  font-style: italic;
+}
+.result-header {
+  display: grid;
+  grid-template-columns: 140px 1fr 1fr 2fr;
+  gap: 0.75rem;
+  padding: 0.3rem 1rem;
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text2);
+  font-weight: 600;
+}
+
+/* ===== MEASURE BADGE ===== */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 0.2rem 0.5rem;
+  border-radius: 4px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+.badge-or { background: rgba(123,111,240,0.2); color: var(--accent3); }
+.badge-rr { background: rgba(76,196,216,0.2); color: var(--cyan); }
+.badge-rd { background: rgba(76,175,130,0.2); color: var(--green); }
+.badge-nnt { background: rgba(240,181,90,0.2); color: var(--amber); }
+.badge-hr { background: rgba(212,111,188,0.2); color: var(--pink); }
+.badge-smd { background: rgba(224,92,106,0.2); color: var(--red); }
+.badge-md { background: rgba(160,200,120,0.2); color: #9fca6f; }
+
+/* ===== EXAMPLES ===== */
+.examples-row {
+  display: flex;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+.example-btn {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  color: var(--text2);
+  border-radius: var(--radius);
+  padding: 0.45rem 0.9rem;
+  cursor: pointer;
+  font-size: 0.82rem;
+  transition: all var(--transition);
+  text-align: left;
+}
+.example-btn:hover {
+  background: var(--bg4);
+  border-color: var(--accent);
+  color: var(--accent3);
+}
+.example-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.example-btn .ex-title { font-weight: 600; display: block; margin-bottom: 0.1rem; }
+.example-btn .ex-sub { font-size: 0.75rem; opacity: 0.7; }
+
+/* ===== FORMULA REFERENCE ===== */
+.formula-section { margin-bottom: 1.5rem; }
+.formula-section h3 {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--accent3);
+  margin-bottom: 0.75rem;
+  padding-bottom: 0.4rem;
+  border-bottom: 1px solid var(--border);
+}
+.formula-item {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+}
+.formula-item .formula-name {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: var(--text2);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 0.4rem;
+}
+.formula-item .formula-math {
+  font-family: 'Courier New', 'Consolas', monospace;
+  font-size: 0.92rem;
+  color: var(--text);
+  background: var(--bg2);
+  padding: 0.4rem 0.7rem;
+  border-radius: 4px;
+  margin: 0.3rem 0;
+  border: 1px solid var(--border);
+  white-space: pre-wrap;
+  overflow-x: auto;
+}
+.formula-item .formula-note {
+  font-size: 0.78rem;
+  color: var(--text2);
+  margin-top: 0.3rem;
+  font-style: italic;
+}
+
+/* ===== BATCH MODE ===== */
+.batch-area {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  width: 100%;
+  font-family: 'Courier New', monospace;
+  font-size: 0.82rem;
+  color: var(--text);
+  resize: vertical;
+  min-height: 150px;
+  transition: border-color var(--transition), box-shadow var(--transition);
+}
+.batch-area:focus {
+  outline: none;
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(123,111,240,0.2);
+}
+.batch-table-wrap { overflow-x: auto; margin-top: 1rem; }
+.batch-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.82rem;
+}
+.batch-table th {
+  background: var(--bg4);
+  color: var(--text2);
+  padding: 0.5rem 0.75rem;
+  text-align: left;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  border: 1px solid var(--border);
+  white-space: nowrap;
+}
+.batch-table td {
+  padding: 0.45rem 0.75rem;
+  border: 1px solid var(--border);
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+.batch-table tr:nth-child(even) td { background: var(--bg3); }
+.batch-table tr:hover td { background: var(--bg4); }
+.batch-table td.na { color: var(--text2); font-style: italic; }
+.batch-table td.warn { color: var(--amber); }
+
+/* ===== ABOUT ===== */
+.about-section { max-width: 720px; }
+.about-section h3 { color: var(--accent3); margin-bottom: 0.5rem; margin-top: 1.25rem; }
+.about-section p, .about-section li {
+  font-size: 0.9rem;
+  color: var(--text2);
+  line-height: 1.7;
+}
+.about-section ul { padding-left: 1.4rem; }
+.about-section li { margin-bottom: 0.3rem; }
+.about-section code {
+  background: var(--bg3);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 0.1rem 0.4rem;
+  font-family: 'Courier New', monospace;
+  font-size: 0.85em;
+  color: var(--accent3);
+}
+.about-section a { color: var(--accent3); text-decoration: none; }
+.about-section a:hover { text-decoration: underline; }
+.disclaimer {
+  background: rgba(240,181,90,0.1);
+  border: 1px solid var(--amber);
+  border-radius: var(--radius);
+  padding: 0.75rem 1rem;
+  font-size: 0.82rem;
+  color: var(--amber);
+  margin-top: 1rem;
+}
+
+/* ===== STATUS BAR ===== */
+.status-bar {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0;
+  font-size: 0.8rem;
+  color: var(--text2);
+  border-top: 1px solid var(--border);
+  margin-top: 0.75rem;
+}
+.status-dot {
+  width: 8px; height: 8px;
+  border-radius: 50%;
+  background: var(--green);
+}
+
+/* ===== ALERT ===== */
+.alert {
+  border-radius: var(--radius);
+  padding: 0.6rem 1rem;
+  font-size: 0.82rem;
+  margin-bottom: 0.75rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+}
+.alert-warn { background: rgba(240,181,90,0.1); border: 1px solid var(--amber); color: var(--amber); }
+.alert-info { background: rgba(123,111,240,0.1); border: 1px solid var(--accent); color: var(--accent3); }
+.alert-ok { background: rgba(76,175,130,0.1); border: 1px solid var(--green); color: var(--green); }
+
+/* ===== SEPARATOR ===== */
+.sep { height: 1px; background: var(--border); margin: 1rem 0; }
+
+/* ===== EXPORT / COPY ===== */
+.action-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-top: 0.75rem;
+}
+
+/* ===== PRINT ===== */
+@media print {
+  .app-header, .tab-bar, .action-row, .examples-row, .btn { display: none !important; }
+  body { background: #fff; color: #000; }
+  .card { border: 1px solid #ccc; box-shadow: none; }
+  .result-row { border: 1px solid #ccc; break-inside: avoid; }
+}
+
+/* ===== RESPONSIVE ===== */
+@media (max-width: 600px) {
+  .main-content { padding: 1rem; }
+  .result-row { grid-template-columns: 100px 1fr 1fr; }
+  .result-row .result-note { display: none; }
+  .result-header .result-note-h { display: none; }
+  .form-grid { grid-template-columns: 1fr 1fr; }
+}
+
+/* ===== COLUMN LAYOUT ===== */
+.two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+}
+@media (max-width: 800px) { .two-col { grid-template-columns: 1fr; } }
+
+/* ===== FOOTER ===== */
+.app-footer {
+  background: var(--bg2);
+  border-top: 1px solid var(--border);
+  padding: 0.75rem 1.5rem;
+  text-align: center;
+  font-size: 0.75rem;
+  color: var(--text2);
+  margin-top: 2rem;
+}
+</style>
+</head>
+<body>
+
+<!-- ===== HEADER ===== -->
+<header class="app-header">
+  <div class="app-title">
+    <span style="font-size:1.4rem;">&#x21C4;</span>
+    <div>
+      <h1>MAConverter</h1>
+      <div class="tagline">Universal Effect Size Translator</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="btn-icon" id="themeToggle" aria-label="Toggle light/dark mode" onclick="toggleTheme()">
+      <span id="themeIcon">&#9728;</span> Theme
+    </button>
+    <button class="btn-icon" aria-label="Print results" onclick="window.print()">
+      &#128438; Print
+    </button>
+  </div>
+</header>
+
+<!-- ===== TAB BAR ===== -->
+<nav class="tab-bar" role="tablist" aria-label="App sections">
+  <button class="tab-btn active" role="tab" aria-selected="true" aria-controls="tab-single" id="tab-single-btn" onclick="switchTab('single')">
+    &#x21C4; Single Conversion
+  </button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-batch" id="tab-batch-btn" onclick="switchTab('batch')">
+    &#9776; Batch Mode
+  </button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-formulas" id="tab-formulas-btn" onclick="switchTab('formulas')">
+    &#x03A3; Formula Reference
+  </button>
+  <button class="tab-btn" role="tab" aria-selected="false" aria-controls="tab-about" id="tab-about-btn" onclick="switchTab('about')">
+    &#9432; About
+  </button>
+</nav>
+
+<!-- ===== TAB: SINGLE CONVERSION ===== -->
+<div class="tab-panel active" id="tab-single" role="tabpanel" aria-labelledby="tab-single-btn">
+  <div class="main-content">
+
+    <!-- Examples -->
+    <div class="card">
+      <div class="card-title">&#9654; Load Example</div>
+      <div class="examples-row">
+        <button class="example-btn" onclick="loadExample(0)" aria-label="Load statin example">
+          <span class="ex-title">1. Statin for MI</span>
+          <span class="ex-sub">OR=0.72 [0.60, 0.86], p&#x2080;=5%</span>
+        </button>
+        <button class="example-btn" onclick="loadExample(1)" aria-label="Load SSRI example">
+          <span class="ex-title">2. SSRI for Depression</span>
+          <span class="ex-sub">SMD=&#x2212;0.31 [&#x2212;0.45, &#x2212;0.17]</span>
+        </button>
+        <button class="example-btn" onclick="loadExample(2)" aria-label="Load SGLT2i example">
+          <span class="ex-title">3. SGLT2i for Mortality</span>
+          <span class="ex-sub">HR=0.87 [0.78, 0.97], p&#x2080;=8%</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Input Panel -->
+    <div class="card">
+      <div class="card-title">&#9998; Input</div>
+      <div class="form-grid">
+        <div class="form-group">
+          <label for="inputMeasure">Effect Measure</label>
+          <select id="inputMeasure" onchange="onMeasureChange()" aria-label="Select input effect measure">
+            <option value="OR">OR — Odds Ratio</option>
+            <option value="RR">RR — Risk Ratio</option>
+            <option value="RD">RD — Risk Difference</option>
+            <option value="HR">HR — Hazard Ratio</option>
+            <option value="SMD">SMD — Std Mean Diff</option>
+            <option value="MD">MD — Mean Difference</option>
+            <option value="NNT">NNT — Num Needed to Treat</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label for="inputValue">Point Estimate</label>
+          <input type="number" id="inputValue" placeholder="e.g. 0.72" step="any" aria-label="Point estimate" oninput="convertNow()">
+        </div>
+        <div class="form-group">
+          <label for="inputLower">95% CI Lower</label>
+          <input type="number" id="inputLower" placeholder="e.g. 0.60" step="any" aria-label="Lower 95% CI" oninput="convertNow()">
+        </div>
+        <div class="form-group">
+          <label for="inputUpper">95% CI Upper</label>
+          <input type="number" id="inputUpper" placeholder="e.g. 0.86" step="any" aria-label="Upper 95% CI" oninput="convertNow()">
+        </div>
+        <div class="form-group" id="grpBaseline">
+          <label for="inputBaseline">Baseline Risk p&#x2080;</label>
+          <input type="number" id="inputBaseline" placeholder="0.05 (5%)" step="any" min="0.001" max="0.999" aria-label="Baseline risk proportion (0–1)" oninput="convertNow()">
+        </div>
+        <div class="form-group" id="grpSD">
+          <label for="inputSD">Pooled SD</label>
+          <input type="number" id="inputSD" placeholder="e.g. 10.5" step="any" min="0.001" aria-label="Pooled standard deviation for MD↔SMD conversion" oninput="convertNow()">
+        </div>
+        <div class="form-group" id="grpBaseline2">
+          <label for="inputBaseline2">Baseline Risk p&#x2080; (for NNT)</label>
+          <input type="number" id="inputBaseline2" placeholder="0.30 (30%)" step="any" min="0.001" max="0.999" aria-label="Baseline risk for NNT calculation from SMD" oninput="convertNow()">
+        </div>
+      </div>
+      <div class="sep"></div>
+      <div class="action-row">
+        <button class="btn" onclick="convertNow()" aria-label="Run conversion">&#x21C4; Convert</button>
+        <button class="btn btn-secondary" onclick="clearInputs()" aria-label="Clear all inputs">&#x2715; Clear</button>
+      </div>
+    </div>
+
+    <!-- Results Panel -->
+    <div class="card" id="resultsCard" style="display:none;">
+      <div class="card-title">&#9745; Results</div>
+      <div id="alertBox"></div>
+      <div class="result-header">
+        <span>Measure</span>
+        <span>Estimate</span>
+        <span>95% CI</span>
+        <span class="result-note-h">Notes &amp; Assumptions</span>
+      </div>
+      <div class="results-grid" id="resultsGrid"></div>
+      <div class="status-bar">
+        <div class="status-dot"></div>
+        <span id="statusMsg">Conversion complete.</span>
+      </div>
+      <div class="action-row">
+        <button class="btn btn-secondary" onclick="copyResults()" aria-label="Copy results to clipboard">&#128203; Copy</button>
+        <button class="btn btn-secondary" onclick="exportCSV()" aria-label="Export results as CSV">&#128196; Export CSV</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ===== TAB: BATCH MODE ===== -->
+<div class="tab-panel" id="tab-batch" role="tabpanel" aria-labelledby="tab-batch-btn">
+  <div class="main-content">
+    <div class="card">
+      <div class="card-title">&#9776; Batch Conversion</div>
+      <div class="alert alert-info">
+        &#9432; Paste rows as: <code>measure, value, lower, upper, p0, SD</code> &mdash; one row per line.
+        <em>measure</em> = OR|RR|RD|HR|SMD|MD. <em>p0</em> and <em>SD</em> are optional (use blank or 0).
+        <br>Example: <code>OR, 0.72, 0.60, 0.86, 0.05</code>
+      </div>
+      <textarea class="batch-area" id="batchInput" aria-label="Batch input: paste rows of effect sizes" placeholder="OR, 0.72, 0.60, 0.86, 0.05&#10;HR, 0.87, 0.78, 0.97, 0.08&#10;SMD, -0.31, -0.45, -0.17, 0.30&#10;RR, 0.75, 0.62, 0.91, 0.10" rows="6"></textarea>
+      <div class="action-row">
+        <button class="btn" onclick="runBatch()" aria-label="Run batch conversion">&#x21C4; Convert All</button>
+        <button class="btn btn-secondary" onclick="loadBatchExample()" aria-label="Load batch example data">Load Example</button>
+        <button class="btn btn-secondary" onclick="exportBatchCSV()" aria-label="Export batch results as CSV">&#128196; Export CSV</button>
+      </div>
+    </div>
+    <div id="batchResults"></div>
+  </div>
+</div>
+
+<!-- ===== TAB: FORMULA REFERENCE ===== -->
+<div class="tab-panel" id="tab-formulas" role="tabpanel" aria-labelledby="tab-formulas-btn">
+  <div class="main-content">
+
+    <div class="card">
+      <div class="card-title">&#x03A3; Formula Reference</div>
+      <div class="alert alert-info">
+        &#9432; All formulas use natural logarithm (ln). CI derivation uses the delta method on the appropriate scale.
+        Approximations are flagged with &#x26A0;.
+      </div>
+
+      <!-- OR ↔ RR -->
+      <div class="formula-section">
+        <h3>OR &#x21C4; RR (Relative Risk)</h3>
+        <div class="formula-item">
+          <div class="formula-name">OR &#x2192; RR (requires baseline risk p&#x2080;)</div>
+          <div class="formula-math">RR = OR / (1 &#x2212; p&#x2080; + p&#x2080; &#x00D7; OR)</div>
+          <div class="formula-note">Exact conversion. p&#x2080; = control group event proportion. Valid for all risks.</div>
+        </div>
+        <div class="formula-item">
+          <div class="formula-name">RR &#x2192; OR</div>
+          <div class="formula-math">OR = RR &#x00D7; (1 &#x2212; p&#x2080;) / (1 &#x2212; p&#x2080; &#x00D7; RR)</div>
+          <div class="formula-note">Exact inverse. Requires baseline risk.</div>
+        </div>
+        <div class="formula-item">
+          <div class="formula-name">Delta method for CI (log scale)</div>
+          <div class="formula-math">SE(ln RR) = SE(ln OR) &#x00D7; |d ln RR / d ln OR|
+&#x2202;RR/&#x2202;OR = (1&#x2212;p&#x2080;) / (1&#x2212;p&#x2080;+p&#x2080;&#x00D7;OR)&#xB2;  &#x2192;  use chain rule</div>
+        </div>
+      </div>
+
+      <!-- OR ↔ RD -->
+      <div class="formula-section">
+        <h3>OR / RR &#x2192; RD (Risk Difference)</h3>
+        <div class="formula-item">
+          <div class="formula-name">OR &#x2192; RD</div>
+          <div class="formula-math">p&#x2081; = p&#x2080; &#x00D7; OR / (1 &#x2212; p&#x2080; + p&#x2080; &#x00D7; OR)
+RD = p&#x2081; &#x2212; p&#x2080;</div>
+          <div class="formula-note">p&#x2081; = treatment group event risk. RD = ARR (absolute risk reduction).</div>
+        </div>
+        <div class="formula-item">
+          <div class="formula-name">RR &#x2192; RD</div>
+          <div class="formula-math">RD = p&#x2080; &#x00D7; (RR &#x2212; 1)</div>
+        </div>
+        <div class="formula-item">
+          <div class="formula-name">Delta method for CI (linear scale)</div>
+          <div class="formula-math">SE(RD) = SE(RR) &#x00D7; p&#x2080;   [from RR route]
+95% CI: RD &#x00B1; 1.96 &#x00D7; SE(RD)</div>
+        </div>
+      </div>
+
+      <!-- RD / RR → NNT -->
+      <div class="formula-section">
+        <h3>RD / RR / OR &#x2192; NNT</h3>
+        <div class="formula-item">
+          <div class="formula-name">From RD (ARR)</div>
+          <div class="formula-math">NNT = 1 / |RD| = 1 / |p&#x2080; &#x2212; p&#x2081;|</div>
+          <div class="formula-note">When RD &gt; 0 (harm), the measure is NNH (number needed to harm).</div>
+        </div>
+        <div class="formula-item">
+          <div class="formula-name">CI for NNT (reciprocal of CI for RD)</div>
+          <div class="formula-math">NNT_lower = 1 / |RD_upper|
+NNT_upper = 1 / |RD_lower|</div>
+          <div class="formula-note">CI bounds swap because of inversion. Confidence interval of NNT crossing 1/0 (infinity) indicates RD CI crossing zero (non-significant).</div>
+        </div>
+      </div>
+
+      <!-- HR ↔ OR -->
+      <div class="formula-section">
+        <h3>HR &#x21C4; OR &#x26A0; (Approximate)</h3>
+        <div class="formula-item">
+          <div class="formula-name">Zhang &amp; Yu 1998 (common events, rare events special case)</div>
+          <div class="formula-math">For rare events (p&#x2080; &lt; 10%):  OR &#x2248; HR
+For common events, use:
+  p&#x2081; = 1 &#x2212; (1&#x2212;p&#x2080;)^HR
+  OR = p&#x2081;(1&#x2212;p&#x2080;) / (p&#x2080;(1&#x2212;p&#x2081;))</div>
+          <div class="formula-note">Proportional hazards approximation. Requires baseline risk p&#x2080; at a fixed time horizon. Always approximate — flagged.</div>
+        </div>
+        <div class="formula-item">
+          <div class="formula-name">Shor 2017 crude approximation (no p&#x2080;)</div>
+          <div class="formula-math">OR &#x2248; HR^1.42   [ln(OR) &#x2248; 1.42&#x00D7;ln(HR)]</div>
+          <div class="formula-note">&#x26A0; Very crude. Use only when p&#x2080; is unavailable. Error &gt;20% for common events.</div>
+        </div>
+      </div>
+
+      <!-- HR ↔ RR -->
+      <div class="formula-section">
+        <h3>HR &#x21C4; RR &#x26A0; (Approximate)</h3>
+        <div class="formula-item">
+          <div class="formula-name">Shor approximation</div>
+          <div class="formula-math">ln(RR) &#x2248; 0.7 &#x00D7; ln(HR)   [i.e. RR &#x2248; HR^0.7]</div>
+          <div class="formula-note">&#x26A0; Approximate only. Valid under proportional hazards and moderate event rates. Converts via RR route for RD, NNT.</div>
+        </div>
+      </div>
+
+      <!-- OR ↔ SMD -->
+      <div class="formula-section">
+        <h3>OR &#x21C4; SMD (Standardised Mean Difference)</h3>
+        <div class="formula-item">
+          <div class="formula-name">Chinn 2000 conversion</div>
+          <div class="formula-math">SMD = ln(OR) &#x00D7; &#x221A;3 / &#x03C0;
+OR  = exp(SMD &#x00D7; &#x03C0; / &#x221A;3)</div>
+          <div class="formula-note">Assumes logistic distribution for binary outcome. &#x03C0;/&#x221A;3 &#x2248; 1.8138. Reference: Chinn S. Stat Med 2000;19:3127–35.</div>
+        </div>
+        <div class="formula-item">
+          <div class="formula-name">Delta method (log scale)</div>
+          <div class="formula-math">SE(SMD) = SE(ln OR) &#x00D7; &#x221A;3 / &#x03C0;</div>
+        </div>
+      </div>
+
+      <!-- MD ↔ SMD -->
+      <div class="formula-section">
+        <h3>MD &#x21C4; SMD</h3>
+        <div class="formula-item">
+          <div class="formula-name">Standard conversion</div>
+          <div class="formula-math">SMD = MD / SD_pooled
+MD  = SMD &#x00D7; SD_pooled</div>
+          <div class="formula-note">SD_pooled = pooled standard deviation of the outcome. Must be supplied by user.</div>
+        </div>
+        <div class="formula-item">
+          <div class="formula-name">Delta method (linear scale)</div>
+          <div class="formula-math">SE(SMD) = SE(MD) / SD_pooled</div>
+        </div>
+      </div>
+
+      <!-- CI derivation -->
+      <div class="formula-section">
+        <h3>CI Derivation (General)</h3>
+        <div class="formula-item">
+          <div class="formula-name">SE from CI (log scale: OR, RR, HR)</div>
+          <div class="formula-math">SE(ln X) = [ln(upper) &#x2212; ln(lower)] / (2 &#x00D7; 1.96)</div>
+        </div>
+        <div class="formula-item">
+          <div class="formula-name">SE from CI (linear scale: RD, MD, SMD)</div>
+          <div class="formula-math">SE(X) = (upper &#x2212; lower) / (2 &#x00D7; 1.96)</div>
+        </div>
+        <div class="formula-item">
+          <div class="formula-name">95% CI from SE (log scale)</div>
+          <div class="formula-math">CI = [exp(ln X &#x2212; 1.96&#x00D7;SE), exp(ln X + 1.96&#x00D7;SE)]</div>
+        </div>
+        <div class="formula-item">
+          <div class="formula-name">95% CI from SE (linear scale)</div>
+          <div class="formula-math">CI = [X &#x2212; 1.96&#x00D7;SE, X + 1.96&#x00D7;SE]</div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- ===== TAB: ABOUT ===== -->
+<div class="tab-panel" id="tab-about" role="tabpanel" aria-labelledby="tab-about-btn">
+  <div class="main-content">
+    <div class="card about-section">
+      <div class="card-title">&#9432; About MAConverter</div>
+
+      <h3>What is MAConverter?</h3>
+      <p>MAConverter is a browser-based universal effect size translator for meta-analysis and systematic reviews. It converts between OR, RR, RD, NNT, HR, SMD and MD with confidence intervals using the delta method.</p>
+
+      <h3>Supported Conversions</h3>
+      <ul>
+        <li>OR &#x21C4; RR (exact, requires baseline risk p&#x2080;)</li>
+        <li>OR / RR &#x2192; RD (exact, requires p&#x2080;)</li>
+        <li>RD / RR / OR &#x2192; NNT (exact)</li>
+        <li>HR &#x2192; OR / RR / RD / NNT (approximate, requires p&#x2080;)</li>
+        <li>OR &#x21C4; SMD (Chinn 2000)</li>
+        <li>MD &#x21C4; SMD (requires pooled SD)</li>
+      </ul>
+
+      <h3>CI Computation</h3>
+      <p>All confidence intervals are propagated via the <strong>delta method</strong>. The standard error is extracted from the input CI on the appropriate scale (log for ratio measures, linear for difference measures), transformed, and back-transformed to produce 95% CI bounds.</p>
+
+      <h3>Key References</h3>
+      <ul>
+        <li>Chinn S. A simple method for converting an odds ratio to effect size. <em>Stat Med</em> 2000;19:3127–35.</li>
+        <li>Zhang J, Yu KF. What's the relative risk? <em>JAMA</em> 1998;280:1690–1.</li>
+        <li>Shor E et al. A practical guide to harmonising data on relative treatment effects. <em>Pharmacoepidemiol Drug Saf</em> 2017.</li>
+        <li>Altman DG, Andersen PK. Calculating the number needed to treat. <em>BMJ</em> 1999;319:1309.</li>
+      </ul>
+
+      <h3>Limitations &amp; Warnings</h3>
+      <ul>
+        <li>HR &#x2194; OR/RR conversions are <strong>approximate</strong>. They assume proportional hazards and a single fixed time horizon.</li>
+        <li>All results are labelled APPROX where formulas are approximate.</li>
+        <li>NNT is undefined when RD = 0 (no treatment effect).</li>
+        <li>OR &#x2248; RR only when baseline risk &lt; ~10%.</li>
+      </ul>
+
+      <h3>AI Disclosure</h3>
+      <p>This application was developed with AI coding assistance (Claude Sonnet 4.6, Anthropic). All statistical formulas were independently verified against primary references. The AI assistant did not invent formulas; it implemented documented, peer-reviewed conversion equations.</p>
+
+      <h3>Version &amp; Source</h3>
+      <p>MAConverter v0.1.0 — <a href="https://github.com/mahmood726-cyber/maconverter" target="_blank" rel="noopener">github.com/mahmood726-cyber/maconverter</a></p>
+      <p>Live: <a href="https://mahmood726-cyber.github.io/maconverter" target="_blank" rel="noopener">mahmood726-cyber.github.io/maconverter</a></p>
+
+      <div class="disclaimer">
+        &#x26A0; <strong>Disclaimer:</strong> MAConverter is intended for research and educational use. Results must be independently verified before clinical use. Conversions involving HR or cross-scale transforms are approximate and carry assumptions that may not hold in all settings.
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== FOOTER ===== -->
+<footer class="app-footer">
+  MAConverter v0.1.0 &mdash; Universal Effect Size Translator &mdash; Open source &mdash; MIT licence
+</footer>
+
+<script>
+// ===================================================
+// MAConverter — core computation engine
+// ===================================================
+
+// ---- Theme ----
+function toggleTheme() {
+  document.body.classList.toggle('light-mode');
+  document.getElementById('themeIcon').textContent =
+    document.body.classList.contains('light-mode') ? '\u263D' : '\u2600';
+}
+
+// ---- Tab switching ----
+function switchTab(name) {
+  document.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.tab-btn').forEach(b => {
+    b.classList.remove('active');
+    b.setAttribute('aria-selected', 'false');
+  });
+  document.getElementById('tab-' + name).classList.add('active');
+  const btn = document.getElementById('tab-' + name + '-btn');
+  btn.classList.add('active');
+  btn.setAttribute('aria-selected', 'true');
+}
+
+// ---- Math helpers ----
+function seFromCI_log(lower, upper) {
+  if (!lower || !upper || lower <= 0 || upper <= 0) return null;
+  return (Math.log(upper) - Math.log(lower)) / (2 * 1.96);
+}
+function seFromCI_linear(lower, upper) {
+  if (lower === null || lower === undefined || upper === null || upper === undefined) return null;
+  return (upper - lower) / (2 * 1.96);
+}
+function ciLog(point, se) {
+  if (se === null || se === undefined) return [null, null];
+  return [Math.exp(Math.log(point) - 1.96 * se), Math.exp(Math.log(point) + 1.96 * se)];
+}
+function ciLinear(point, se) {
+  if (se === null || se === undefined) return [null, null];
+  return [point - 1.96 * se, point + 1.96 * se];
+}
+const fmt = (x, dp) => (x === null || x === undefined || !isFinite(x)) ? null : Number(x).toFixed(dp ?? 3);
+function fmtCI(lo, hi, dp) {
+  if (lo === null || hi === null || !isFinite(lo) || !isFinite(hi)) return 'CI N/A';
+  dp = dp ?? 3;
+  return '[' + Number(lo).toFixed(dp) + ', ' + Number(hi).toFixed(dp) + ']';
+}
+
+// ---- Core conversion library ----
+
+// OR → RR (exact)
+function OR_to_RR(or, p0) {
+  if (!or || !p0) return null;
+  return or / (1 - p0 + p0 * or);
+}
+
+// RR → OR
+function RR_to_OR(rr, p0) {
+  if (!rr || !p0) return null;
+  const denom = 1 - p0 * rr;
+  if (Math.abs(denom) < 1e-12) return null;
+  return rr * (1 - p0) / denom;
+}
+
+// OR → p1 → RD
+function OR_to_RD(or, p0) {
+  if (!or || !p0) return null;
+  const p1 = (p0 * or) / (1 - p0 + p0 * or);
+  return p1 - p0;
+}
+
+// RR → RD
+function RR_to_RD(rr, p0) {
+  if (!rr || !p0) return null;
+  return p0 * (rr - 1);
+}
+
+// RD → NNT
+function RD_to_NNT(rd) {
+  if (rd === null || rd === undefined || !isFinite(rd) || Math.abs(rd) < 1e-12) return null;
+  return 1 / Math.abs(rd);
+}
+
+// OR → SMD (Chinn 2000)
+const CHINN_FACTOR = Math.sqrt(3) / Math.PI; // ≈ 0.5513
+function OR_to_SMD(or) {
+  if (!or || or <= 0) return null;
+  return Math.log(or) * CHINN_FACTOR;
+}
+
+// SMD → OR
+function SMD_to_OR(smd) {
+  if (smd === null || smd === undefined) return null;
+  return Math.exp(smd / CHINN_FACTOR);
+}
+
+// MD → SMD
+function MD_to_SMD(md, sd) {
+  if (sd === null || sd === undefined || sd <= 0) return null;
+  return md / sd;
+}
+
+// SMD → MD
+function SMD_to_MD(smd, sd) {
+  if (sd === null || sd === undefined || sd <= 0) return null;
+  return smd * sd;
+}
+
+// HR → OR (proportional hazards approximation, requires p0 at time T)
+function HR_to_OR(hr, p0) {
+  if (!hr || !p0) return null;
+  const p1 = 1 - Math.pow(1 - p0, hr);
+  if (!isFinite(p1) || p1 <= 0 || p1 >= 1) return null;
+  return (p1 * (1 - p0)) / (p0 * (1 - p1));
+}
+
+// HR → RR (Shor approximation)
+function HR_to_RR_shor(hr) {
+  if (!hr || hr <= 0) return null;
+  return Math.pow(hr, 0.7);
+}
+
+// SMD → NNT via OR → RD (requires p0)
+// Convert SMD → OR → RR → RD → NNT
+function SMD_to_NNT(smd, p0) {
+  const or = SMD_to_OR(smd);
+  if (!or || !p0) return null;
+  const rd = OR_to_RD(or, p0);
+  return RD_to_NNT(rd);
+}
+
+// ---- Delta method CI propagation ----
+
+// Given OR point + SE(lnOR), compute RR point + CI
+function computeRR_CI(or, seLnOR, p0) {
+  if (!or || !p0) return { val: null, lo: null, hi: null };
+  const rr = OR_to_RR(or, p0);
+  if (!seLnOR || !isFinite(rr)) return { val: rr, lo: null, hi: null };
+  // d RR / d OR = (1-p0) / (1-p0+p0*OR)^2
+  const denom = 1 - p0 + p0 * or;
+  const dRR_dOR = (1 - p0) / (denom * denom);
+  // by delta method on log scale: SE(lnRR) = |d lnRR / d lnOR| * SE(lnOR)
+  // d lnRR/d lnOR = OR/RR * dRR/dOR = (OR/rr) * dRR_dOR
+  const seRatio = Math.abs((or / rr) * dRR_dOR) * seLnOR;
+  const [lo, hi] = ciLog(rr, seRatio);
+  return { val: rr, lo, hi };
+}
+
+// Given OR + SE(lnOR), compute RD + CI
+function computeRD_CI(or, seLnOR, p0) {
+  if (!or || !p0) return { val: null, lo: null, hi: null };
+  const rd = OR_to_RD(or, p0);
+  if (!seLnOR || !isFinite(rd)) return { val: rd, lo: null, hi: null };
+  // p1 = p0*OR / (1-p0+p0*OR)
+  // RD = p1 - p0
+  // d RD / d OR = p0*(1-p0) / (1-p0+p0*OR)^2
+  const denom = 1 - p0 + p0 * or;
+  const dRD_dOR = (p0 * (1 - p0)) / (denom * denom);
+  // SE(RD) = SE(OR) * |dRD/dOR| = OR * seLnOR * |dRD/dOR|
+  const seRD = or * seLnOR * Math.abs(dRD_dOR);
+  const [lo, hi] = ciLinear(rd, seRD);
+  return { val: rd, lo, hi };
+}
+
+// Given RD + SE(RD), compute NNT + CI
+function computeNNT_CI(rd, seRD) {
+  if (rd === null || rd === undefined || !isFinite(rd) || Math.abs(rd) < 1e-12) return { val: null, lo: null, hi: null };
+  const nnt = 1 / Math.abs(rd);
+  if (!seRD || !isFinite(seRD)) return { val: nnt, lo: null, hi: null };
+  const rdLo = rd - 1.96 * seRD;
+  const rdHi = rd + 1.96 * seRD;
+  // NNT CI is reciprocal of RD CI — bounds swap
+  const nntLo = rdHi !== 0 ? 1 / Math.abs(rdHi) : null;
+  const nntHi = rdLo !== 0 ? 1 / Math.abs(rdLo) : null;
+  if (rdLo < 0 && rdHi > 0) return { val: nnt, lo: null, hi: null, crossesZero: true };
+  return { val: nnt, lo: nntLo, hi: nntHi };
+}
+
+// ---- Main conversion function ----
+// Returns array of result objects
+function computeAll(measure, value, lower, upper, p0, sd, p0_2) {
+  const results = [];
+  function add(label, cat, v, lo, hi, note, approx, na) {
+    results.push({ label, cat, v, lo, hi, note: note ?? '', approx: !!approx, na: !!na });
+  }
+
+  // Determine SE on native scale
+  let seLnOR = null, seLnRR = null, seLnHR = null;
+  let seRD = null, seSMD = null, seMD = null;
+
+  let or_v = null, rr_v = null, rd_v = null, nnt_v = null, hr_v = null, smd_v = null, md_v = null;
+  let rr_lo = null, rr_hi = null;
+  let rd_lo = null, rd_hi = null;
+  let nnt_lo = null, nnt_hi = null;
+  let or_lo = null, or_hi = null;
+  let smd_lo = null, smd_hi = null;
+  let md_lo = null, md_hi = null;
+
+  const hasCI = isFinite(lower) && isFinite(upper) && lower !== null && upper !== null;
+
+  if (measure === 'OR') {
+    or_v = value;
+    if (hasCI) {
+      seLnOR = seFromCI_log(lower, upper);
+      or_lo = lower; or_hi = upper;
+    }
+
+    // OR → RR
+    if (p0) {
+      const rrR = computeRR_CI(or_v, seLnOR, p0);
+      rr_v = rrR.val; rr_lo = rrR.lo; rr_hi = rrR.hi;
+      add('RR', 'rr', rr_v, rr_lo, rr_hi, 'Exact (p\u2080=' + p0 + ')');
+
+      // OR → RD
+      const rdR = computeRD_CI(or_v, seLnOR, p0);
+      rd_v = rdR.val; rd_lo = rdR.lo; rd_hi = rdR.hi;
+      const rdSE = seLnOR ? or_v * seLnOR * (p0 * (1 - p0)) / Math.pow(1 - p0 + p0 * or_v, 2) : null;
+      add('RD', 'rd', rd_v, rd_lo, rd_hi, 'ARR, exact (p\u2080=' + p0 + ')');
+
+      // NNT
+      const nntR = computeNNT_CI(rd_v, rdSE);
+      nnt_v = nntR.val; nnt_lo = nntR.lo; nnt_hi = nntR.hi;
+      const nntNote = nntR.crossesZero ? 'CI crosses null (RD\u20070); NNT CI undefined' : 'Exact via RD';
+      add('NNT', 'nnt', nnt_v, nnt_lo, nnt_hi, nntNote);
+    } else {
+      add('RR', 'rr', null, null, null, 'Requires baseline risk p\u2080', false, true);
+      add('RD', 'rd', null, null, null, 'Requires baseline risk p\u2080', false, true);
+      add('NNT', 'nnt', null, null, null, 'Requires baseline risk p\u2080', false, true);
+    }
+
+    // OR → SMD
+    smd_v = OR_to_SMD(or_v);
+    const seSMDfromOR = seLnOR ? seLnOR * CHINN_FACTOR : null;
+    [smd_lo, smd_hi] = seSMDfromOR ? ciLinear(smd_v, seSMDfromOR) : [null, null];
+    add('SMD', 'smd', smd_v, smd_lo, smd_hi, 'Chinn 2000 (ln(OR)\u00D7\u221A3/\u03C0)');
+
+    // MD (needs SD)
+    if (sd && smd_v !== null) {
+      md_v = SMD_to_MD(smd_v, sd);
+      const seMDfromSMD = seSMDfromOR ? seSMDfromOR * sd : null;
+      [md_lo, md_hi] = seMDfromSMD ? ciLinear(md_v, seMDfromSMD) : [null, null];
+      add('MD', 'md', md_v, md_lo, md_hi, 'Via SMD, SD=' + sd);
+    } else {
+      add('MD', 'md', null, null, null, 'Requires pooled SD', false, true);
+    }
+
+    // HR (approximate)
+    add('HR', 'hr', or_v, or_lo, or_hi, '\u2248OR (rare events assumption); \u26A0 Approx', true);
+
+  } else if (measure === 'RR') {
+    rr_v = value;
+    if (hasCI) {
+      seLnRR = seFromCI_log(lower, upper);
+      rr_lo = lower; rr_hi = upper;
+    }
+
+    // RR → OR
+    if (p0) {
+      or_v = RR_to_OR(rr_v, p0);
+      const seLnORfromRR = seLnRR ? seLnRR * Math.abs((rr_v / or_v) * ((1 - p0) / Math.pow(1 - p0 * rr_v, 2)) * (or_v / rr_v)) : null;
+      // Simpler: propagate via log OR = log(rr*(1-p0)) - log(1-p0*rr)
+      // d lnOR / d lnRR: use numerical approach
+      const eps = rr_v * 1e-6;
+      const orPlus = RR_to_OR(rr_v + eps, p0);
+      const orMinus = RR_to_OR(rr_v - eps, p0);
+      const dLnOR_dLnRR = (Math.log(orPlus) - Math.log(orMinus)) / (2 * eps) * rr_v;
+      const seLnORnum = seLnRR ? Math.abs(dLnOR_dLnRR) * seLnRR : null;
+      [or_lo, or_hi] = seLnORnum ? ciLog(or_v, seLnORnum) : [null, null];
+      add('OR', 'or', or_v, or_lo, or_hi, 'Exact (p\u2080=' + p0 + ')');
+
+      // RR → RD
+      rd_v = RR_to_RD(rr_v, p0);
+      seRD = seLnRR ? p0 * rr_v * seLnRR : null;
+      [rd_lo, rd_hi] = seRD ? ciLinear(rd_v, seRD) : [null, null];
+      add('RD', 'rd', rd_v, rd_lo, rd_hi, 'ARR = p\u2080\u00D7(RR\u22121)');
+
+      // NNT
+      const nntR = computeNNT_CI(rd_v, seRD);
+      nnt_v = nntR.val; nnt_lo = nntR.lo; nnt_hi = nntR.hi;
+      add('NNT', 'nnt', nnt_v, nnt_lo, nnt_hi, nntR.crossesZero ? 'CI crosses null' : 'Via RD');
+    } else {
+      add('OR', 'or', null, null, null, 'Requires baseline risk p\u2080', false, true);
+      add('RD', 'rd', null, null, null, 'Requires baseline risk p\u2080', false, true);
+      add('NNT', 'nnt', null, null, null, 'Requires baseline risk p\u2080', false, true);
+    }
+
+    // RR → SMD (via OR → SMD if p0 available)
+    if (p0 && or_v) {
+      smd_v = OR_to_SMD(or_v);
+      const seLnORnum2 = or_lo && or_hi ? seFromCI_log(or_lo, or_hi) : null;
+      const seSMDnum = seLnORnum2 ? seLnORnum2 * CHINN_FACTOR : null;
+      [smd_lo, smd_hi] = seSMDnum ? ciLinear(smd_v, seSMDnum) : [null, null];
+      add('SMD', 'smd', smd_v, smd_lo, smd_hi, 'Via OR, Chinn 2000', true);
+    } else {
+      add('SMD', 'smd', null, null, null, 'Requires p\u2080 for OR\u2192SMD route', false, true);
+    }
+
+    add('MD', 'md', null, null, null, 'Requires pooled SD \u0026 SMD route', false, true);
+    add('HR', 'hr', Math.pow(rr_v, 1/0.7), null, null, '\u2248HR (Shor, ln(HR)\u22481.43\u00D7ln(RR)); \u26A0 Approx', true);
+
+  } else if (measure === 'RD') {
+    rd_v = value;
+    if (hasCI) {
+      seRD = seFromCI_linear(lower, upper);
+      rd_lo = lower; rd_hi = upper;
+    }
+
+    nnt_v = RD_to_NNT(rd_v);
+    const nntR = computeNNT_CI(rd_v, seRD);
+    nnt_lo = nntR.lo; nnt_hi = nntR.hi;
+    add('NNT', 'nnt', nnt_v, nnt_lo, nnt_hi, nntR.crossesZero ? 'CI crosses null' : '1/|RD|');
+
+    if (p0) {
+      rr_v = 1 + rd_v / p0;
+      const seRR = seRD ? seRD / p0 : null;
+      [rr_lo, rr_hi] = seRR ? ciLog(rr_v > 0 ? rr_v : 0.001, seRR) : [null, null];
+      add('RR', 'rr', rr_v, rr_lo, rr_hi, 'RR=1+RD/p\u2080');
+      or_v = RR_to_OR(rr_v, p0);
+      const seLnORnum = seLnRR ? seLnRR : (rr_lo && rr_hi ? seFromCI_log(rr_lo, rr_hi) : null);
+      [or_lo, or_hi] = seLnORnum ? ciLog(or_v, seLnORnum) : [null, null];
+      add('OR', 'or', or_v, or_lo, or_hi, 'Via RR');
+    } else {
+      add('RR', 'rr', null, null, null, 'Requires p\u2080', false, true);
+      add('OR', 'or', null, null, null, 'Requires p\u2080', false, true);
+    }
+    add('SMD', 'smd', null, null, null, 'Requires OR route (needs p\u2080)', false, true);
+    add('MD', 'md', null, null, null, 'Requires pooled SD', false, true);
+    add('HR', 'hr', null, null, null, 'Not directly convertible from RD', false, true);
+
+  } else if (measure === 'HR') {
+    hr_v = value;
+    if (hasCI) {
+      seLnHR = seFromCI_log(lower, upper);
+    }
+
+    if (p0) {
+      // HR → OR (proportional hazards)
+      or_v = HR_to_OR(hr_v, p0);
+      if (or_v) {
+        const eps = hr_v * 1e-6;
+        const orP = HR_to_OR(hr_v + eps, p0);
+        const orM = HR_to_OR(hr_v - eps, p0);
+        const dLnOR_dLnHR = orP && orM ? (Math.log(orP) - Math.log(orM)) / (2 * eps) * hr_v : null;
+        const seLnORhr = (seLnHR && dLnOR_dLnHR) ? Math.abs(dLnOR_dLnHR) * seLnHR : null;
+        [or_lo, or_hi] = seLnORhr ? ciLog(or_v, seLnORhr) : [null, null];
+        add('OR', 'or', or_v, or_lo, or_hi, 'PH approx: p\u2081=1\u2212(1\u2212p\u2080)^HR; \u26A0 Approx', true);
+
+        // → RR
+        rr_v = OR_to_RR(or_v, p0);
+        const seLnRRhr = seLnORhr ? seLnORhr * 0.7 : null; // approx via Shor
+        [rr_lo, rr_hi] = seLnRRhr ? ciLog(rr_v, seLnRRhr) : [null, null];
+        add('RR', 'rr', rr_v, rr_lo, rr_hi, 'Via OR, PH approx; \u26A0 Approx', true);
+
+        // → RD
+        rd_v = OR_to_RD(or_v, p0);
+        const rdR2 = computeRD_CI(or_v, seLnORhr, p0);
+        rd_lo = rdR2.lo; rd_hi = rdR2.hi;
+        add('RD', 'rd', rd_v, rd_lo, rd_hi, 'Via OR, PH approx; \u26A0 Approx', true);
+
+        // → NNT
+        const rdSE2 = seLnORhr ? or_v * seLnORhr * (p0 * (1 - p0)) / Math.pow(1 - p0 + p0 * or_v, 2) : null;
+        const nntR2 = computeNNT_CI(rd_v, rdSE2);
+        add('NNT', 'nnt', nntR2.val, nntR2.lo, nntR2.hi, nntR2.crossesZero ? 'CI crosses null' : 'Via RD; \u26A0 Approx', true);
+
+        // → SMD
+        smd_v = OR_to_SMD(or_v);
+        const seSMDhr = seLnORhr ? seLnORhr * CHINN_FACTOR : null;
+        [smd_lo, smd_hi] = seSMDhr ? ciLinear(smd_v, seSMDhr) : [null, null];
+        add('SMD', 'smd', smd_v, smd_lo, smd_hi, 'Via OR, Chinn 2000; \u26A0 Approx', true);
+      }
+    } else {
+      // No p0: use Shor approximation HR→RR
+      rr_v = HR_to_RR_shor(hr_v);
+      const [rrLoShor, rrHiShor] = seLnHR ? ciLog(rr_v, 0.7 * seLnHR) : [null, null];
+      add('OR', 'or', null, null, null, 'Requires p\u2080 for PH method', false, true);
+      add('RR', 'rr', rr_v, rrLoShor, rrHiShor, 'Shor 2017: RR\u2248HR^0.7; \u26A0 Approx', true);
+      add('RD', 'rd', null, null, null, 'Requires p\u2080', false, true);
+      add('NNT', 'nnt', null, null, null, 'Requires p\u2080', false, true);
+      add('SMD', 'smd', null, null, null, 'Requires p\u2080', false, true);
+    }
+    add('MD', 'md', null, null, null, 'Requires pooled SD', false, true);
+
+  } else if (measure === 'SMD') {
+    smd_v = value;
+    if (hasCI) {
+      seSMD = seFromCI_linear(lower, upper);
+      smd_lo = lower; smd_hi = upper;
+    }
+
+    // SMD → OR
+    or_v = SMD_to_OR(smd_v);
+    const seLnORfromSMD = seSMD ? seSMD / CHINN_FACTOR : null;
+    [or_lo, or_hi] = seLnORfromSMD ? ciLog(or_v, seLnORfromSMD) : [null, null];
+    add('OR', 'or', or_v, or_lo, or_hi, 'Chinn 2000 (exp(SMD\u00D7\u03C0/\u221A3))');
+
+    // SMD → RR via OR → RR
+    const p0used = p0 ?? p0_2;
+    if (p0used) {
+      rr_v = OR_to_RR(or_v, p0used);
+      const rrR3 = computeRR_CI(or_v, seLnORfromSMD, p0used);
+      rr_lo = rrR3.lo; rr_hi = rrR3.hi;
+      add('RR', 'rr', rr_v, rr_lo, rr_hi, 'Via OR, p\u2080=' + p0used);
+
+      rd_v = OR_to_RD(or_v, p0used);
+      const rdR3 = computeRD_CI(or_v, seLnORfromSMD, p0used);
+      rd_lo = rdR3.lo; rd_hi = rdR3.hi;
+      add('RD', 'rd', rd_v, rd_lo, rd_hi, 'Via OR, p\u2080=' + p0used);
+
+      const rdSE3 = seLnORfromSMD ? or_v * seLnORfromSMD * (p0used * (1 - p0used)) / Math.pow(1 - p0used + p0used * or_v, 2) : null;
+      const nntR3 = computeNNT_CI(rd_v, rdSE3);
+      add('NNT', 'nnt', nntR3.val, nntR3.lo, nntR3.hi, nntR3.crossesZero ? 'CI crosses null' : 'Via RD');
+    } else {
+      add('RR', 'rr', null, null, null, 'Requires p\u2080', false, true);
+      add('RD', 'rd', null, null, null, 'Requires p\u2080', false, true);
+      add('NNT', 'nnt', null, null, null, 'Requires p\u2080', false, true);
+    }
+
+    // SMD → MD
+    if (sd) {
+      md_v = SMD_to_MD(smd_v, sd);
+      const seMDfromSMD = seSMD ? seSMD * sd : null;
+      [md_lo, md_hi] = seMDfromSMD ? ciLinear(md_v, seMDfromSMD) : [null, null];
+      add('MD', 'md', md_v, md_lo, md_hi, 'SMD\u00D7SD, SD=' + sd);
+    } else {
+      add('MD', 'md', null, null, null, 'Requires pooled SD', false, true);
+    }
+
+    add('HR', 'hr', null, null, null, 'No direct SMD\u2192HR formula', false, true);
+
+  } else if (measure === 'MD') {
+    md_v = value;
+    if (hasCI) {
+      seMD = seFromCI_linear(lower, upper);
+      md_lo = lower; md_hi = upper;
+    }
+
+    if (sd) {
+      smd_v = MD_to_SMD(md_v, sd);
+      const seSMDfromMD = seMD ? seMD / sd : null;
+      [smd_lo, smd_hi] = seSMDfromMD ? ciLinear(smd_v, seSMDfromMD) : [null, null];
+      add('SMD', 'smd', smd_v, smd_lo, smd_hi, 'MD/SD, SD=' + sd);
+
+      // SMD → OR
+      or_v = SMD_to_OR(smd_v);
+      const seLnORfromMD = seSMDfromMD ? seSMDfromMD / CHINN_FACTOR : null;
+      [or_lo, or_hi] = seLnORfromMD ? ciLog(or_v, seLnORfromMD) : [null, null];
+      add('OR', 'or', or_v, or_lo, or_hi, 'Via SMD, Chinn 2000');
+
+      const p0used2 = p0 ?? p0_2;
+      if (p0used2) {
+        rr_v = OR_to_RR(or_v, p0used2);
+        const rrR4 = computeRR_CI(or_v, seLnORfromMD, p0used2);
+        rr_lo = rrR4.lo; rr_hi = rrR4.hi;
+        add('RR', 'rr', rr_v, rr_lo, rr_hi, 'Via SMD\u2192OR, p\u2080=' + p0used2);
+
+        rd_v = OR_to_RD(or_v, p0used2);
+        const rdR4 = computeRD_CI(or_v, seLnORfromMD, p0used2);
+        rd_lo = rdR4.lo; rd_hi = rdR4.hi;
+        add('RD', 'rd', rd_v, rd_lo, rd_hi, 'Via SMD\u2192OR, p\u2080=' + p0used2);
+
+        const rdSE4 = seLnORfromMD ? or_v * seLnORfromMD * (p0used2 * (1 - p0used2)) / Math.pow(1 - p0used2 + p0used2 * or_v, 2) : null;
+        const nntR4 = computeNNT_CI(rd_v, rdSE4);
+        add('NNT', 'nnt', nntR4.val, nntR4.lo, nntR4.hi, nntR4.crossesZero ? 'CI crosses null' : 'Via RD');
+      } else {
+        add('RR', 'rr', null, null, null, 'Requires p\u2080', false, true);
+        add('RD', 'rd', null, null, null, 'Requires p\u2080', false, true);
+        add('NNT', 'nnt', null, null, null, 'Requires p\u2080', false, true);
+      }
+    } else {
+      add('SMD', 'smd', null, null, null, 'Requires pooled SD', false, true);
+      add('OR', 'or', null, null, null, 'Requires SD for SMD route', false, true);
+      add('RR', 'rr', null, null, null, 'Requires SD', false, true);
+      add('RD', 'rd', null, null, null, 'Requires SD', false, true);
+      add('NNT', 'nnt', null, null, null, 'Requires SD', false, true);
+    }
+    add('HR', 'hr', null, null, null, 'No direct MD\u2192HR formula', false, true);
+
+  } else if (measure === 'NNT') {
+    const rd_from_nnt = value !== 0 ? 1 / value : null;
+    rd_v = rd_from_nnt;
+    if (hasCI) {
+      const nntLoCI = lower;
+      const nntHiCI = upper;
+      rd_lo = nntHiCI ? 1 / nntHiCI : null;
+      rd_hi = nntLoCI ? 1 / nntLoCI : null;
+      seRD = (rd_lo !== null && rd_hi !== null) ? seFromCI_linear(rd_lo, rd_hi) : null;
+    }
+    add('RD', 'rd', rd_v, rd_lo, rd_hi, 'RD=1/NNT');
+    if (p0) {
+      rr_v = rd_v !== null ? 1 + rd_v / p0 : null;
+      const seRRnnt = seRD ? seRD / p0 : null;
+      [rr_lo, rr_hi] = seRRnnt && rr_v > 0 ? ciLog(rr_v, seRRnnt) : [null, null];
+      add('RR', 'rr', rr_v, rr_lo, rr_hi, 'Via RD, p\u2080=' + p0);
+      or_v = rr_v ? RR_to_OR(rr_v, p0) : null;
+      const seLnO = rr_lo && rr_hi ? seFromCI_log(rr_lo, rr_hi) : null;
+      [or_lo, or_hi] = seLnO ? ciLog(or_v, seLnO) : [null, null];
+      add('OR', 'or', or_v, or_lo, or_hi, 'Via RR');
+    } else {
+      add('RR', 'rr', null, null, null, 'Requires p\u2080', false, true);
+      add('OR', 'or', null, null, null, 'Requires p\u2080', false, true);
+    }
+    add('SMD', 'smd', null, null, null, 'Requires OR (needs p\u2080)', false, true);
+    add('MD', 'md', null, null, null, 'Requires SD', false, true);
+    add('HR', 'hr', null, null, null, 'Not directly convertible from NNT', false, true);
+  }
+
+  return results;
+}
+
+// ---- Formatting helpers ----
+const MEASURE_LABELS = { OR: 'OR', RR: 'RR', RD: 'RD', NNT: 'NNT', HR: 'HR', SMD: 'SMD', MD: 'MD' };
+const MEASURE_DP = { OR: 3, RR: 3, RD: 4, NNT: 1, HR: 3, SMD: 3, MD: 3 };
+
+function fmtVal(cat, v) {
+  if (v === null || v === undefined || !isFinite(v)) return '—';
+  const dp = MEASURE_DP[cat.toUpperCase()] ?? 3;
+  return Number(v).toFixed(dp);
+}
+function fmtCI2(cat, lo, hi) {
+  if (!lo || !hi || !isFinite(lo) || !isFinite(hi)) return '';
+  const dp = MEASURE_DP[cat.toUpperCase()] ?? 3;
+  return '[' + Number(lo).toFixed(dp) + ', ' + Number(hi).toFixed(dp) + ']';
+}
+
+// ---- Render results ----
+function renderResults(results, inputMeasure) {
+  const grid = document.getElementById('resultsGrid');
+  grid.innerHTML = '';
+  let warnings = [];
+  results.forEach(r => {
+    const row = document.createElement('div');
+    const isInput = r.cat.toUpperCase() === inputMeasure.toUpperCase();
+    row.className = 'result-row' + (isInput ? ' highlight' : '') + (r.approx ? ' warn' : '') + (r.na ? ' na' : '');
+    const badge = `<span class="badge badge-${r.cat.toLowerCase()}">${MEASURE_LABELS[r.cat.toUpperCase()] ?? r.cat}</span>`;
+    const valStr = r.na ? '<em style="color:var(--text2)">N/A</em>' : fmtVal(r.cat, r.v);
+    const ciStr = r.na ? '' : fmtCI2(r.cat, r.lo, r.hi);
+    const noteStr = (r.approx ? '\u26A0 ' : '') + (r.note ?? '');
+    row.innerHTML = `<div class="result-label">${badge}</div>` +
+      `<div class="result-value">${valStr}</div>` +
+      `<div class="result-ci">${ciStr}</div>` +
+      `<div class="result-note">${noteStr}</div>`;
+    grid.appendChild(row);
+    if (r.approx && !r.na) warnings.push(r.cat.toUpperCase() + ': ' + r.note);
+  });
+  const alertBox = document.getElementById('alertBox');
+  alertBox.innerHTML = '';
+  if (warnings.length > 0) {
+    alertBox.innerHTML = `<div class="alert alert-warn">\u26A0 Approximate conversions: ${warnings.map(w => `<em>${w}</em>`).join('; ')}</div>`;
+  }
+}
+
+// ---- Convert now ----
+function convertNow() {
+  const measure = document.getElementById('inputMeasure').value;
+  const value = parseFloat(document.getElementById('inputValue').value);
+  const lower = parseFloat(document.getElementById('inputLower').value);
+  const upper = parseFloat(document.getElementById('inputUpper').value);
+  const p0raw = parseFloat(document.getElementById('inputBaseline').value);
+  const sdRaw = parseFloat(document.getElementById('inputSD').value);
+  const p0_2raw = parseFloat(document.getElementById('inputBaseline2').value);
+
+  if (!isFinite(value)) {
+    document.getElementById('resultsCard').style.display = 'none';
+    return;
+  }
+
+  const p0 = isFinite(p0raw) ? p0raw : null;
+  const sd = isFinite(sdRaw) ? sdRaw : null;
+  const p0_2 = isFinite(p0_2raw) ? p0_2raw : null;
+
+  const results = computeAll(
+    measure, value,
+    isFinite(lower) ? lower : null,
+    isFinite(upper) ? upper : null,
+    p0, sd, p0_2
+  );
+
+  document.getElementById('resultsCard').style.display = 'block';
+  renderResults(results, measure);
+  document.getElementById('statusMsg').textContent =
+    'Converted from ' + measure + ' — ' + new Date().toLocaleTimeString();
+}
+
+// ---- Clear inputs ----
+function clearInputs() {
+  ['inputValue','inputLower','inputUpper','inputBaseline','inputSD','inputBaseline2'].forEach(id => {
+    document.getElementById(id).value = '';
+  });
+  document.getElementById('resultsCard').style.display = 'none';
+}
+
+// ---- Load examples ----
+const EXAMPLES = [
+  { measure: 'OR', value: 0.72, lower: 0.60, upper: 0.86, p0: 0.05, sd: '', p0_2: '', label: '1. Statin for MI' },
+  { measure: 'SMD', value: -0.31, lower: -0.45, upper: -0.17, p0: '', sd: '', p0_2: 0.30, label: '2. SSRI for Depression' },
+  { measure: 'HR', value: 0.87, lower: 0.78, upper: 0.97, p0: 0.08, sd: '', p0_2: '', label: '3. SGLT2i for Mortality' }
+];
+
+function loadExample(i) {
+  const e = EXAMPLES[i];
+  document.getElementById('inputMeasure').value = e.measure;
+  document.getElementById('inputValue').value = e.value;
+  document.getElementById('inputLower').value = e.lower;
+  document.getElementById('inputUpper').value = e.upper;
+  document.getElementById('inputBaseline').value = e.p0 !== '' ? e.p0 : '';
+  document.getElementById('inputSD').value = e.sd !== '' ? e.sd : '';
+  document.getElementById('inputBaseline2').value = e.p0_2 !== '' ? e.p0_2 : '';
+  onMeasureChange();
+  convertNow();
+}
+
+// ---- Measure change ----
+function onMeasureChange() {
+  convertNow();
+}
+
+// ---- Copy results ----
+function copyResults() {
+  const rows = document.querySelectorAll('#resultsGrid .result-row');
+  let text = 'Measure\tEstimate\t95% CI\tNotes\n';
+  rows.forEach(row => {
+    const cols = row.querySelectorAll('.result-label, .result-value, .result-ci, .result-note');
+    const parts = Array.from(cols).map(c => c.textContent.trim());
+    text += parts.join('\t') + '\n';
+  });
+  navigator.clipboard.writeText(text).then(() => {
+    const btn = document.querySelector('.action-row .btn-secondary');
+    if (btn) { const old = btn.textContent; btn.textContent = '\u2713 Copied!'; setTimeout(() => { btn.textContent = old; }, 1500); }
+  }).catch(() => alert('Copy failed — use manual selection.'));
+}
+
+// ---- Export CSV ----
+function exportCSV() {
+  const measure = document.getElementById('inputMeasure').value;
+  const value = document.getElementById('inputValue').value;
+  const lower = document.getElementById('inputLower').value;
+  const upper = document.getElementById('inputUpper').value;
+  const p0 = document.getElementById('inputBaseline').value;
+
+  const rows = document.querySelectorAll('#resultsGrid .result-row');
+  let csv = 'Measure,Estimate,CI_Lower,CI_Upper,Notes\n';
+  rows.forEach(row => {
+    const label = row.querySelector('.result-label')?.textContent.trim() ?? '';
+    const val = row.querySelector('.result-value')?.textContent.trim() ?? '';
+    const ci = row.querySelector('.result-ci')?.textContent.trim().replace('[','').replace(']','').split(',') ?? ['',''];
+    const note = row.querySelector('.result-note')?.textContent.trim().replace(/,/g, ';') ?? '';
+    csv += [label, val, ci[0]?.trim() ?? '', ci[1]?.trim() ?? '', note].join(',') + '\n';
+  });
+  csv = 'MAConverter Export\nInput: ' + measure + '=' + value + ' [' + lower + ',' + upper + '] p0=' + p0 + '\n\n' + csv;
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'maconverter-results.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ---- Batch mode ----
+let batchResultsData = [];
+
+function runBatch() {
+  const raw = document.getElementById('batchInput').value.trim();
+  if (!raw) return;
+  const lines = raw.split('\n').filter(l => l.trim() && !l.trim().startsWith('#'));
+  batchResultsData = [];
+
+  lines.forEach((line, idx) => {
+    const parts = line.split(/,|\t/).map(p => p.trim());
+    const measure = (parts[0] ?? '').toUpperCase();
+    const value = parseFloat(parts[1]);
+    const lower = parseFloat(parts[2]);
+    const upper = parseFloat(parts[3]);
+    const p0 = parseFloat(parts[4]);
+    const sd = parseFloat(parts[5]);
+
+    if (!['OR','RR','RD','HR','SMD','MD','NNT'].includes(measure) || !isFinite(value)) {
+      batchResultsData.push({ row: idx + 1, measure, error: 'Invalid input' });
+      return;
+    }
+
+    const results = computeAll(
+      measure, value,
+      isFinite(lower) ? lower : null,
+      isFinite(upper) ? upper : null,
+      isFinite(p0) ? p0 : null,
+      isFinite(sd) ? sd : null,
+      null
+    );
+    batchResultsData.push({ row: idx + 1, measure, value, lower, upper, p0, results });
+  });
+
+  renderBatchResults();
+}
+
+function renderBatchResults() {
+  const container = document.getElementById('batchResults');
+  if (!batchResultsData.length) { container.innerHTML = ''; return; }
+
+  const ALL_MEASURES = ['OR','RR','RD','NNT','HR','SMD','MD'];
+  let html = '<div class="card"><div class="card-title">&#9776; Batch Results</div>';
+  html += '<div class="batch-table-wrap"><table class="batch-table"><thead><tr>';
+  html += '<th>Row</th><th>Input</th><th>Value</th><th>Lower</th><th>Upper</th><th>p&#x2080;</th>';
+  ALL_MEASURES.forEach(m => { html += `<th>${m}</th><th>${m} CI</th>`; });
+  html += '</tr></thead><tbody>';
+
+  batchResultsData.forEach(entry => {
+    if (entry.error) {
+      html += `<tr><td>${entry.row}</td><td class="warn">${entry.measure}</td><td colspan="${4 + ALL_MEASURES.length * 2}" class="warn">Error: ${entry.error}</td></tr>`;
+      return;
+    }
+    const resultMap = {};
+    (entry.results ?? []).forEach(r => { resultMap[r.cat.toUpperCase()] = r; });
+    html += `<tr><td>${entry.row}</td><td><span class="badge badge-${entry.measure.toLowerCase()}">${entry.measure}</span></td>`;
+    html += `<td>${isFinite(entry.value) ? entry.value : '—'}</td>`;
+    html += `<td>${isFinite(entry.lower) ? entry.lower : '—'}</td>`;
+    html += `<td>${isFinite(entry.upper) ? entry.upper : '—'}</td>`;
+    html += `<td>${isFinite(entry.p0) ? entry.p0 : '—'}</td>`;
+
+    ALL_MEASURES.forEach(m => {
+      if (m === entry.measure) {
+        html += `<td class="highlight-cell">${isFinite(entry.value) ? Number(entry.value).toFixed(MEASURE_DP[m] ?? 3) : '—'}</td>`;
+        html += `<td>${isFinite(entry.lower) && isFinite(entry.upper) ? '['+Number(entry.lower).toFixed(MEASURE_DP[m]??3)+', '+Number(entry.upper).toFixed(MEASURE_DP[m]??3)+']' : '—'}</td>`;
+      } else {
+        const r = resultMap[m];
+        if (!r || r.na || r.v === null || !isFinite(r.v)) {
+          html += `<td class="na">—</td><td class="na">—</td>`;
+        } else {
+          const dp = MEASURE_DP[m] ?? 3;
+          const approxFlag = r.approx ? ' \u26A0' : '';
+          html += `<td${r.approx ? ' class="warn"' : ''}>${Number(r.v).toFixed(dp)}${approxFlag}</td>`;
+          const ciStr = (r.lo && r.hi && isFinite(r.lo) && isFinite(r.hi))
+            ? '['+Number(r.lo).toFixed(dp)+', '+Number(r.hi).toFixed(dp)+']' : '—';
+          html += `<td${r.approx ? ' class="warn"' : ''}>${ciStr}</td>`;
+        }
+      }
+    });
+    html += '</tr>';
+  });
+
+  html += '</tbody></table></div>';
+  html += '<div class="action-row"><button class="btn btn-secondary" onclick="exportBatchCSV()" aria-label="Export batch CSV">&#128196; Export CSV</button></div>';
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function loadBatchExample() {
+  document.getElementById('batchInput').value =
+    'OR, 0.72, 0.60, 0.86, 0.05\nHR, 0.87, 0.78, 0.97, 0.08\nSMD, -0.31, -0.45, -0.17, 0.30\nRR, 0.75, 0.62, 0.91, 0.10\nRD, -0.04, -0.07, -0.01, 0.08';
+  runBatch();
+}
+
+function exportBatchCSV() {
+  if (!batchResultsData.length) { alert('No batch results to export.'); return; }
+  const ALL_MEASURES = ['OR','RR','RD','NNT','HR','SMD','MD'];
+  let csv = 'Row,Input,Value,Lower,Upper,p0,' + ALL_MEASURES.flatMap(m => [m, m+'_lo', m+'_hi']).join(',') + '\n';
+  batchResultsData.forEach(entry => {
+    if (entry.error) { csv += entry.row + ',' + entry.measure + ',ERROR\n'; return; }
+    const rm = {};
+    (entry.results ?? []).forEach(r => { rm[r.cat.toUpperCase()] = r; });
+    const row = [entry.row, entry.measure, entry.value ?? '', entry.lower ?? '', entry.upper ?? '', entry.p0 ?? ''];
+    ALL_MEASURES.forEach(m => {
+      if (m === entry.measure) {
+        row.push(isFinite(entry.value) ? entry.value : '', isFinite(entry.lower) ? entry.lower : '', isFinite(entry.upper) ? entry.upper : '');
+      } else {
+        const r = rm[m];
+        if (!r || r.na || r.v === null || !isFinite(r.v)) { row.push('','',''); }
+        else {
+          row.push(Number(r.v).toFixed(MEASURE_DP[m]??3));
+          row.push((r.lo && isFinite(r.lo)) ? Number(r.lo).toFixed(MEASURE_DP[m]??3) : '');
+          row.push((r.hi && isFinite(r.hi)) ? Number(r.hi).toFixed(MEASURE_DP[m]??3) : '');
+        }
+      }
+    });
+    csv += row.join(',') + '\n';
+  });
+
+  const blob = new Blob([csv], { type: 'text/csv' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'maconverter-batch.csv';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+// ---- Keyboard navigation for tabs ----
+document.querySelectorAll('.tab-btn').forEach(btn => {
+  btn.addEventListener('keydown', e => {
+    if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); btn.click(); }
+  });
+});
+
+// ---- Init ----
+document.addEventListener('DOMContentLoaded', () => {
+  loadExample(0);
+});
+</script>
+</body>
+</html>
