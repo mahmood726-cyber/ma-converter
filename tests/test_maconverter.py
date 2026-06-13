@@ -1,5 +1,5 @@
 import sys, io, os, unittest, time, math
-if sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
+if 'pytest' not in sys.modules and sys.stdout.encoding and sys.stdout.encoding.lower() != 'utf-8':
     try:
         sys.stdout = io.TextIOWrapper(sys.stdout.buffer, encoding='utf-8', errors='replace')
     except Exception:
@@ -9,7 +9,10 @@ from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import Select
 
-HTML = 'file:///' + os.path.abspath(r'C:\Models\MAConverter\maconverter.html').replace('\\','/')
+# Resolve the HTML under test relative to this test file so the suite runs
+# from a fresh clone without machine-specific paths.
+_HTML_FILE = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..', 'maconverter.html')
+HTML = 'file:///' + os.path.abspath(_HTML_FILE).replace('\\', '/')
 
 class TestMAConverter(unittest.TestCase):
     @classmethod
